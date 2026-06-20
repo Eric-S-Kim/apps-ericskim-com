@@ -1,0 +1,13 @@
+[
+  {
+    "slug": "chief-of-staff",
+    "name": "Chief of Staff",
+    "sub": "are my automations healthy?",
+    "icon": "icons/chief-of-staff-red-192.png",
+    "kind": "hosted",
+    "url": "apps/chief-of-staff/",
+    "labelColor": "#7a1212",
+    "borderColor": "#cc2222",
+    "glowColor": "#cc222252"
+  }
+]

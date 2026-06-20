@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#242628">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-any-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lustria&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Chief of Staff — Health Monitor</title>
+<style>
+  /* Flourishing Ray — Calm Teal (dark). Chrome is teal; health-status colors stay functional. */
+  :root{
+    --bg:#242628; --panel:#313335; --panel2:#414245; --edge:#545658;
+    --txt:#F3F6F9; --dim:#D7DADD; --faint:#A1A3A6;
+    --teal:#63B3B2; --teal-soft:#C9DFDE; --teal-bright:#84F4F3;
+    --green:#4AC06C; --green-d:#14361f; --amber:#D9A23A; --amber-d:#3a2f15;
+    --red:#E2685A; --red-bg:#43201c; --grey:#8b97a6; --grey-d:#2b2d33;
+    --brand:#002C2C; --beige:#f3f6f9;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:"Hanken Grotesk","Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
+  body{padding:14px 14px calc(34px + env(safe-area-inset-bottom));}
+  header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+  h1{font-family:"Lustria",Georgia,serif;font-size:20px;font-weight:400;margin:0;letter-spacing:0;color:var(--teal-soft);}
+  .counts{margin-left:auto;display:flex;gap:11px;font-size:12px;color:var(--dim);}
+  .counts b{color:var(--txt);font-variant-numeric:tabular-nums;}
+
+  #bulb{border-radius:11px;padding:11px 14px;margin:6px 0 16px;display:flex;align-items:center;gap:11px;
+    font-size:14px;font-weight:650;border:1px solid var(--edge);}
+  #bulb .led{width:13px;height:13px;border-radius:50%;flex:none;box-shadow:0 0 0 4px rgba(255,255,255,.05);}
+  #bulb.green{background:var(--green-d);border-color:#1f5c2e;} #bulb.green .led{background:var(--green);box-shadow:0 0 10px 1px var(--green);}
+  #bulb.amber{background:var(--amber-d);border-color:#6b5414;} #bulb.amber .led{background:var(--amber);box-shadow:0 0 10px 1px var(--amber);}
+  #bulb.down{background:var(--red-bg);border-color:#7d2236;animation:pulse 1.4s infinite;} #bulb.down .led{background:var(--red);box-shadow:0 0 12px 2px var(--red);}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+  #bulb .sub{margin-left:auto;font-weight:400;color:var(--dim);font-size:11.5px;text-align:right;}
+
+  .groups{display:grid;gap:11px;}
+  .grp{background:rgba(49,51,53,.94);border:1px solid var(--edge);border-radius:11px;overflow:hidden;}
+  .grp>summary{list-style:none;cursor:pointer;min-height:48px;padding:12px;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:9px;align-items:center;user-select:none;}
+  .grp>summary::-webkit-details-marker{display:none;}
+  .ghead{min-width:0;}
+  .gname{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--teal);font-weight:800;line-height:1.2;overflow-wrap:anywhere;}
+  .gsum{display:block;margin-top:3px;font-size:11.5px;font-weight:700;color:var(--dim);}
+  .gsum.green{color:var(--green);} .gsum.amber{color:var(--amber);} .gsum.red,.gsum.grey{color:var(--red);} .gsum.idle{color:var(--faint);}
+  .gcount{min-width:28px;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:2px 8px;color:var(--dim);text-align:center;font-size:11px;font-variant-numeric:tabular-nums;}
+  .chev{color:var(--faint);font-size:17px;transition:transform .15s;}
+  .grp[open] .chev{transform:rotate(90deg);}
+  .grp .grid{padding:0 10px 10px;border-top:1px solid rgba(255,255,255,.08);}
+  .group-title{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--teal);margin:18px 0 8px;font-weight:700;}
+  .grid{display:grid;gap:9px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+  .tile{background:var(--panel);border:1px solid var(--edge);border-radius:11px;padding:11px 12px;position:relative;border-left-width:5px;min-height:64px;cursor:pointer;}
+  .tile .nm{font-size:13px;font-weight:600;line-height:1.25;margin:0 0 4px;padding-right:16px;}
+  .tile .meta{font-size:11px;color:var(--dim);display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+  .tile .st{font-weight:700;} .tile .lag{color:var(--faint);font-variant-numeric:tabular-nums;}
+  .tile .led{position:absolute;top:11px;right:11px;width:10px;height:10px;border-radius:50%;}
+  .tile .det{display:none;margin-top:9px;font-size:11px;line-height:1.38;color:var(--faint);}
+  .tile.open .det{display:block;}
+  .tile .det b{color:var(--dim);font-weight:700;}
+  .tile .desc{color:var(--dim);}
+  .tile .urg{font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--red);border:1px solid var(--red);border-radius:4px;padding:0 4px;text-transform:uppercase;}
+  .tile.green{border-left-color:var(--green);} .tile.green .led{background:var(--green);box-shadow:0 0 8px var(--green);} .tile.green .st{color:var(--green);}
+  .tile.amber{border-left-color:var(--amber);} .tile.amber .led{background:var(--amber);box-shadow:0 0 8px var(--amber);} .tile.amber .st{color:var(--amber);}
+  .tile.red{border-left-color:var(--red);} .tile.red .led{background:var(--red);box-shadow:0 0 8px var(--red);} .tile.red .st{color:var(--red);}
+  .tile.grey{border-left-color:var(--grey);background:var(--grey-d);opacity:.82;} .tile.grey .led{background:var(--grey);} .tile.grey .st{color:var(--grey);}
+  .tile.info{border-left-color:var(--teal);} .tile.info .led{background:var(--teal);box-shadow:0 0 8px var(--teal);} .tile.info .st{color:var(--teal);}
+  .tile.idle{border-left-color:var(--grey);border-left-style:dashed;} .tile.idle .led{background:transparent;border:2px solid var(--grey);box-shadow:none;} .tile.idle .st{color:var(--dim);}
+  footer{margin-top:22px;color:var(--faint);font-size:10.5px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Chief of Staff</h1>
+    <span class="counts" id="src"></span>
+    <div class="counts" id="counts"></div>
+  </header>
+  <div id="bulb"><span class="led"></span><span id="bulb-text">…</span><span class="sub" id="bulb-sub"></span></div>
+  <div id="board"></div>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+"use strict";
+// No passcode gate: the board is public on GitHub Pages and the (sanitized) data is
+// fetched regardless. The data is deliberately limited to job names + health colors +
+// freshness (no paths/errors), so it holds no private information.
+const CADENCE_FALLBACK = 7200;
+const ALLOWED_SKEW_MS = 120000;
+
+function human(ms){const past=ms>=0;let s=Math.abs(Math.round(ms/1000));let o;
+  if(s<60)o=s+"s";else if(s<3600)o=Math.floor(s/60)+"m";
+  else if(s<86400){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);o=m?h+"h "+m+"m":h+"h";}
+  else{const d=Math.floor(s/86400),h=Math.floor((s%86400)/3600);o=h?d+"d "+h+"h":d+"d";}return o;}
+function ago(ms){return ms>=0?human(ms)+" ago":"in "+human(ms);}
+function num(v){const n=Number(v);return Number.isFinite(n)?n:NaN;}
+function stampMs(m,a,b){const ms=num(m[a]);if(Number.isFinite(ms))return ms;const p=Date.parse(m[b]);return Number.isFinite(p)?p:NaN;}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+
+// RED = actually broken/undelivered (down, delivery_failed) or stale/grey.
+// GREEN = nothing for you to do: healthy, OR "watching" (system is self-monitoring a metric, no action needed).
+// AMBER = needs_attention / skipped — go fix something. RED = down / broken.
+function statusColor(s){if(s==="down"||s==="delivery_failed")return "red";if(s==="needs_attention"||s==="skipped")return "amber";if(s==="watching")return "green";if(s==="healthy")return "green";if(s==="idle")return "idle";return "grey";}
+const SEV={red:3,amber:2,green:1,info:1,idle:0,grey:0};
+const DISPLAY_SEV={grey:4,red:3,amber:2,green:1,info:1,idle:0};
+const SUBSYSTEM_ORDER=["Engine","Pipelines","Watchers","Verification","Health & Security","Backups","Other"];
+function tileColor(j,down){if(down)return "grey";let c=statusColor(j.status);
+  // W1b: only flag a healthy job overdue once it is past expected_by + one monitor cadence,
+  // so the hourly-published snapshot aging doesn't paint healthy short-cadence jobs amber.
+  if(j.expected_by&&c==="green"){const eb=Date.parse(j.expected_by);
+    const graceMs=((state&&state.monitor&&state.monitor.evaluator_cadence_seconds)||3600)*1000;
+    if(!isNaN(eb)&&Date.now()>eb+graceMs)c="amber";}return c;}
+
+function bulbState(state){
+  if(!state||!state.monitor)return {level:"down",text:"MONITOR DOWN",sub:"no health data"};
+  const m=state.monitor,now=Date.now();
+  let cad=num(m.evaluator_cadence_seconds);if(!Number.isFinite(cad)||cad<=0)cad=CADENCE_FALLBACK;cad*=1000;
+  const gen=stampMs(m,"generated_at_ms","generated_at");
+  if(!Number.isFinite(gen))return {level:"down",text:"MONITOR DOWN",sub:"unparseable timestamp"};
+  const harv=stampMs(m,"harvest_evaluated_at_ms","harvest_evaluated_at");
+  if(gen-now>ALLOWED_SKEW_MS||(Number.isFinite(harv)&&harv-now>ALLOWED_SKEW_MS))
+    return {level:"down",text:"MONITOR DOWN",sub:"clock skew — gauges untrusted"};
+  if(Number.isFinite(harv)&&(now-harv)>=3*cad)
+    return {level:"down",text:"MONITOR DOWN",sub:"data stale ("+ago(now-harv)+")"};
+  const age=now-gen;if(!Number.isFinite(age))return {level:"down",text:"MONITOR DOWN",sub:"clock error"};
+  const last="updated "+ago(age);
+  if(age>=2*cad)return {level:"down",text:"MONITOR DOWN",sub:last+" (expected every "+human(cad)+")"};
+  if(age>=cad)return {level:"amber",text:"Monitor stale",sub:last};
+  return {level:"green",text:"Monitor alive",sub:last};
+}
+const LABEL={needs_attention:"ATTENTION",watching:"WATCHING",healthy:"HEALTHY",idle:"IDLE",unknown:"UNKNOWN",down:"DOWN",delivery_failed:"DELIVERY FAILED",skipped:"SKIPPED"};
+const WHY={needs_attention:"needs attention",watching:"watching",delivery_failed:"delivery failed",skipped:"skipped",idle:"idle",unknown:"unknown",down:"down"};
+
+function render(state,sourceNote){
+  const bulb=bulbState(state),down=bulb.level==="down";
+  const bEl=document.getElementById("bulb");bEl.className=bulb.level;
+  document.getElementById("bulb-text").textContent=bulb.text;
+  document.getElementById("bulb-sub").textContent=bulb.sub;
+  const board=document.getElementById("board");board.innerHTML="";
+  document.getElementById("src").textContent="";document.getElementById("counts").innerHTML="";
+  if(!state||!state.jobs){document.getElementById("foot").textContent="No data. "+(sourceNote||"");return;}
+  const m=state.monitor;
+  document.getElementById("counts").innerHTML=
+    '<span><b>'+m.jobs_needs_attention+'</b> attn</span>'+
+    '<span><b>'+(m.jobs_healthy+(m.jobs_watching||0))+'</b> ok</span>'+(m.jobs_idle?'<span><b>'+m.jobs_idle+'</b> idle</span>':'');
+  try{renderSubsystemBoard(board,state.jobs,down);}catch(e){console.error("group render failed",e);renderUngroupedBoard(board,state.jobs,down);}
+  document.getElementById("foot").innerHTML="Live at "+new Date().toLocaleTimeString()+
+    " · auto-refresh 60s · "+esc(sourceNote||"")+" · sanitized view · build "+BUILD;
+}
+function renderUngroupedBoard(board,jobsList,down){
+  const urgent=jobsList.filter(j=>j.urgency==="urgent"),routine=jobsList.filter(j=>j.urgency!=="urgent");
+  const groups=[];if(urgent.length)groups.push(["Urgent",urgent]);groups.push([urgent.length?"Routine":"All jobs",routine]);
+  for(const [title,jobs] of groups){
+    const sorted=jobs.slice().sort((a,b)=>{const sa=SEV[tileColor(a,down)],sb=SEV[tileColor(b,down)];
+      if(sb!==sa)return sb-sa;return (a.display_name||a.id).localeCompare(b.display_name||b.id);});
+    const h=document.createElement("div");h.className="group-title";h.textContent=title+" ("+jobs.length+")";board.appendChild(h);
+    const grid=document.createElement("div");grid.className="grid";
+    for(const j of sorted)grid.appendChild(tileEl(j,down));board.appendChild(grid);
+  }
+}
+function renderSubsystemBoard(board,jobsList,down){
+  const bySub=new Map();for(const name of SUBSYSTEM_ORDER)bySub.set(name,[]);
+  for(const j of jobsList){const sub=SUBSYSTEM_ORDER.includes(j.subsystem)?j.subsystem:"Other";bySub.get(sub).push(j);}
+  const wrap=document.createElement("div");wrap.className="groups";
+  for(const sub of SUBSYSTEM_ORDER){
+    const jobs=bySub.get(sub);if(!jobs||!jobs.length)continue;
+    const colors=jobs.map(j=>tileColor(j,down));
+    const worst=colors.reduce((acc,c)=>DISPLAY_SEV[c]>DISPLAY_SEV[acc]?c:acc,"idle");
+    const open=down||worst==="grey"||worst==="red"||worst==="amber";
+    const summary=groupSummary(colors);
+    const details=document.createElement("details");details.className="grp";if(open)details.open=true;
+    details.dataset.subsystem=sub;details.dataset.color=worst;
+    details.innerHTML='<summary><span class="ghead"><span class="gname">'+esc(sub)+'</span>'+
+      '<span class="gsum '+esc(summary.color)+'">'+esc(summary.text)+'</span></span>'+
+      '<span class="gcount">'+jobs.length+'</span><span class="chev">›</span></summary>';
+    const grid=document.createElement("div");grid.className="grid";
+    const sorted=jobs.slice().sort((a,b)=>{const sa=DISPLAY_SEV[tileColor(a,down)],sb=DISPLAY_SEV[tileColor(b,down)];
+      if(sb!==sa)return sb-sa;return (a.display_name||a.id).localeCompare(b.display_name||b.id);});
+    for(const j of sorted)grid.appendChild(tileEl(j,down));details.appendChild(grid);wrap.appendChild(details);
+  }
+  board.appendChild(wrap);
+}
+function groupSummary(colors){
+  const need=colors.filter(c=>c==="red"||c==="grey").length,watch=colors.filter(c=>c==="amber").length,idle=colors.filter(c=>c==="idle").length;
+  if(need)return {color:"red",text:need+" need"+(need===1?"s":"")+" you"+(watch?", "+watch+" watching":"")};
+  if(watch)return {color:"amber",text:watch+" watching"};
+  if(idle===colors.length)return {color:"idle",text:"idle"};
+  return {color:"green",text:"all clear"};
+}
+function tileEl(j,down){
+  const color=tileColor(j,down),el=document.createElement("div");el.className="tile "+color;
+  el.dataset.id=j.id||"";el.dataset.status=j.status||"";el.dataset.color=color;
+  const lastOk=j.last_ok_at?Date.parse(j.last_ok_at):NaN;
+  const lagTxt=isNaN(lastOk)?"":ago(Date.now()-lastOk);
+  const stLabel=down?"GREY (down)":(LABEL[j.status]||(j.status||"?").toUpperCase());
+  let meta='<span class="st">'+esc(stLabel)+'</span>';if(lagTxt)meta+='<span class="lag">'+lagTxt+'</span>';
+  if(j.urgency==="urgent"&&(color==="red"||color==="amber"||color==="grey"))meta='<span class="urg">urgent</span>'+meta;
+  const det=[];
+  if(j.description)det.push('<span class="desc">'+esc(j.description)+'</span>');
+  if(color==="red"||color==="amber"||color==="grey"){
+    const why=down?"monitor down":(WHY[j.status]||("status is "+(j.status||"unknown")));
+    det.push("<b>Why it's flagged:</b> "+esc(why));
+  }
+  el.innerHTML='<span class="led"></span><div class="nm">'+esc(j.display_name||j.id)+'</div><div class="meta">'+meta+'</div><div class="det">'+det.join("<br>")+'</div>';
+  el.addEventListener("click",()=>el.classList.toggle("open"));
+  return el;
+}
+
+const BUILD="2026-06-08-2";  // W1a: bump on every index.html change; version.json must match this
+let state=null,sourceNote="";
+async function load(){
+  try{
+    const r=await fetch("health-state.json?cb="+Date.now(),{cache:"no-store"});
+    if(!r.ok){state=null;sourceNote="fetch HTTP "+r.status;}
+    else {state=await r.json();sourceNote="live";}
+  }catch(e){state=null;sourceNote="offline";}
+  render(state,sourceNote);
+}
+// W1a: self-update the app shell. The 60s loop only refreshes DATA; the HTML/JS shell is
+// cached by GitHub Pages (max-age=600) and never reloads itself, so a render-logic fix never
+// reaches an open tab. Fetch version.json (the deployed shell's build id); on mismatch reload
+// ONCE to a ?v=<build> URL — a distinct URL bypasses the CDN cache like the data fetch does.
+// The sessionStorage guard caps it at one reload per target build so it can never loop.
+async function checkShellVersion(){
+  try{
+    const r=await fetch("version.json?cb="+Date.now(),{cache:"no-store"});
+    if(!r.ok)return;
+    const v=await r.json();
+    if(v&&v.build&&v.build!==BUILD){
+      const key="cosreload:"+v.build;
+      if(!sessionStorage.getItem(key)){sessionStorage.setItem(key,"1");location.replace(location.pathname+"?v="+encodeURIComponent(v.build));}
+    }
+  }catch(e){}
+}
+function start(){ load(); checkShellVersion(); setInterval(load,60000); setInterval(checkShellVersion,60000); setInterval(()=>render(state,sourceNote),20000); }
+start();
+</script>
+</body>
+</html>

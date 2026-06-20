@@ -1,0 +1,15 @@
+make-icons.py
+__pycache__/
+*.pyc
+.DS_Store
+
+# Secrets / credentials -- security hardening 2026-06-19 (never commit these)
+.env
+.env.local
+.env.*
+*.pem
+*.key
+auth.json
+.credentials.json
+service-account*.json
+*-token.txt

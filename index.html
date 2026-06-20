@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eric's Apps</title>
+<meta name="theme-color" content="#002F10">
+<meta name="description" content="Eric's personal app store">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-any-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-any-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lustria&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    /* Flourishing Ray brand tokens */
+    --green: #002F10;            /* deep forest — headings / ink-on-light */
+    --green-700: #006823;        /* primary brand green */
+    --green-500: #009B34;        /* emerald — vitality */
+    --lime: #D8FC7B;             /* lime accent (use sparingly) */
+    --camel: #B59764;            /* earthy warmth (decorative only — too light for text) */
+    --camel-deep: #7E5F28;       /* darkened camel for text — 5.4:1 on beige (WCAG AA) */
+    --cream: #E9E2D1;
+    --ink: #131313;
+    --beige: #f7f4ee;
+    --green-soft: rgba(0, 47, 16, 0.08);
+    --green-line: rgba(0, 47, 16, 0.18);
+    --serif: 'Lustria', Georgia, 'Times New Roman', serif;
+    --sans: 'TT Commons', 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--beige);
+    color: var(--green);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    padding: max(env(safe-area-inset-top), 24px) 20px max(env(safe-area-inset-bottom), 24px);
+  }
+  header {
+    text-align: center;
+    margin: 32px 0 40px;
+  }
+  .brandmark { width: 52px; height: 52px; display: inline-block; margin-bottom: 10px; }
+  .eyebrow {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--camel-deep);
+    margin: 0 0 6px;
+  }
+  h1 {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(34px, 8.5vw, 54px);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.08;
+  }
+  h1 .hl { color: var(--green-700); }
+  .tagline {
+    font-family: var(--serif);
+    font-size: 15px;
+    color: var(--ink);
+    opacity: 0.62;
+    margin: 12px 0 0;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+    max-width: 640px;
+    margin: 0 auto;
+    width: 100%;
+    flex: 1;
+  }
+  .card {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 24px;
+    background: var(--beige);
+    border: 1.5px dashed var(--green-line);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    text-align: center;
+    opacity: 0.55;
+    overflow: hidden;
+  }
+  .card .label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 11px;
+  }
+  .card .sub {
+    font-size: 12px;
+    font-weight: 400;
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+  .card-app {
+    position: relative;
+    opacity: 1;
+    border: 2.5px solid var(--green-line);
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .card-app:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 47, 16, 0.12);
+  }
+  /* Flourishing Ray halo: a soft radial light behind each icon (the "ray") */
+  .glowlayer { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .card-app > img, .card-app .mono, .card-app .label, .card-app .sub { position: relative; z-index: 1; }
+  .card-app .remove { z-index: 2; }
+  .card-app:active {
+    transform: translateY(0);
+  }
+  /* monogram fallback icon (used by private/link tiles with no image) */
+  .mono {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    background: var(--green);
+    color: var(--beige);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 600;
+  }
+  /* "+ Add app" tile (reuses the dashed .card look) */
+  .card-add {
+    opacity: 1;
+    cursor: pointer;
+    color: var(--green);
+    text-decoration: none;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .card-add:hover { transform: translateY(-2px); background: var(--green-soft); }
+  .card-add .plus { font-size: 38px; font-weight: 300; line-height: 1; opacity: 0.7; }
+  /* remove (×) control on private tiles */
+  .remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--green-soft);
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .card-app:hover .remove, .remove:focus { opacity: 1; }
+  @media (pointer: coarse) { .remove { opacity: 0.55; } }
+  /* add-app form panel */
+  .add-panel {
+    max-width: 480px;
+    margin: 0 auto 24px;
+    padding: 16px 18px;
+    background: var(--green-soft);
+    border-radius: 16px;
+    flex-direction: column;
+    gap: 10px;
+    display: none;
+  }
+  .add-panel.open { display: flex; }
+  .add-panel label { font-size: 12px; font-weight: 600; opacity: 0.8; display: block; margin-bottom: 4px; }
+  .add-panel input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--green-line);
+    background: var(--beige);
+    color: var(--green);
+    font: inherit;
+    font-size: 14px;
+  }
+  .add-panel .row { display: flex; gap: 10px; margin-top: 4px; }
+  .add-panel button {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .add-panel .primary { background: var(--green); color: var(--beige); }
+  .add-panel .ghost { background: transparent; color: var(--green); border: 1.5px solid var(--green-line); }
+  .add-err { color: #b3261e; font-size: 12px; min-height: 14px; margin: 0; }
+  .add-note { font-size: 12px; opacity: 0.7; line-height: 1.4; margin: 4px 0 0; }
+  footer {
+    text-align: center;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--green-line);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    opacity: 0.6;
+  }
+  @media (display-mode: standalone) {
+    .install-hint { display: none; }
+  }
+  .install-hint {
+    max-width: 480px;
+    margin: 0 auto 24px;
+    padding: 14px 18px;
+    background: var(--green-soft);
+    border-radius: 16px;
+    font-size: 13px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .install-hint strong { font-weight: 600; }
+</style>
+</head>
+<body>
+  <header>
+    <!-- Flourishing Ray brandmark: four hearts (the four pillars) form a clover (hope)
+         with a centered ray (optimism). Used sparingly, in brand green. -->
+    <svg class="brandmark" viewBox="-100 -100 200 200" aria-label="Flourishing Ray">
+      <g fill="#006823">
+        <path transform="rotate(0)"   d="M0,-8 C-30,-40 -44,-64 -24,-82 C-12,-92 0,-83 0,-66 C0,-83 12,-92 24,-82 C44,-64 30,-40 0,-8 Z"/>
+        <path transform="rotate(90)"  d="M0,-8 C-30,-40 -44,-64 -24,-82 C-12,-92 0,-83 0,-66 C0,-83 12,-92 24,-82 C44,-64 30,-40 0,-8 Z"/>
+        <path transform="rotate(180)" d="M0,-8 C-30,-40 -44,-64 -24,-82 C-12,-92 0,-83 0,-66 C0,-83 12,-92 24,-82 C44,-64 30,-40 0,-8 Z"/>
+        <path transform="rotate(270)" d="M0,-8 C-30,-40 -44,-64 -24,-82 C-12,-92 0,-83 0,-66 C0,-83 12,-92 24,-82 C44,-64 30,-40 0,-8 Z"/>
+      </g>
+      <g stroke="#D8FC7B" stroke-width="5" stroke-linecap="round">
+        <line x1="0" y1="-17" x2="0" y2="17"/><line x1="-17" y1="0" x2="17" y2="0"/>
+        <line x1="-12" y1="-12" x2="12" y2="12"/><line x1="-12" y1="12" x2="12" y2="-12"/>
+      </g>
+      <circle cx="0" cy="0" r="6.5" fill="#D8FC7B"/>
+    </svg>
+    <p class="eyebrow">A Personal App Store</p>
+    <h1>Eric's <span class="hl">Apps</span></h1>
+    <p class="tagline">illuminating what's flourishing &amp; what needs light</p>
+  </header>
+
+  <p class="install-hint">
+    <strong>To install:</strong> tap the menu in Chrome <span aria-hidden="true">⋮</span>
+    then <em>Add to Home Screen</em>.
+  </p>
+
+  <!-- Add-app form. Private apps entered here are saved ONLY in this device's
+       localStorage — never sent anywhere, never committed to this public repo. -->
+  <form class="add-panel" id="addPanel" autocomplete="off" novalidate>
+    <div>
+      <label for="appName">App name</label>
+      <input id="appName" type="text" placeholder="Morning Brief" maxlength="40">
+    </div>
+    <div>
+      <label for="appUrl">App URL</label>
+      <input id="appUrl" type="url" inputmode="url" placeholder="https://my-app.up.railway.app/">
+    </div>
+    <div>
+      <label for="appSub">Tagline (optional)</label>
+      <input id="appSub" type="text" placeholder="my daily brief" maxlength="60">
+    </div>
+    <div>
+      <label for="appIcon">Icon URL (optional)</label>
+      <input id="appIcon" type="url" inputmode="url" placeholder="https://my-app/icon.png">
+    </div>
+    <p class="add-err" id="addErr" role="alert"></p>
+    <div class="row">
+      <button type="submit" class="primary">Add to this device</button>
+      <button type="button" class="ghost" id="addCancel">Cancel</button>
+    </div>
+    <p class="add-note">Saved only on this device. Private app links stay on your phone — they're never published or sent anywhere.</p>
+  </form>
+
+  <div class="grid" id="apps">
+    <noscript>
+      <a href="apps/chief-of-staff/" class="card card-app" aria-label="Chief of Staff" style="border-color:#006823;">
+        <img src="icons/chief-of-staff-192.png" alt="" width="64" height="64" style="border-radius:14px;">
+        <div class="label" style="color:#002F10;">Chief of Staff</div>
+        <div class="sub">are my automations healthy?</div>
+      </a>
+    </noscript>
+  </div>
+
+  <footer>ericskim.com</footer>
+
+  <script>
+    // Eric's Apps launcher.
+    //  - PUBLIC apps come from apps.json (committed; ship registers them).
+    //  - PRIVATE apps are added on-device via the "+ Add app" tile and live ONLY in this
+    //    device's localStorage. Their URLs are never committed to this public repo and
+    //    never sent anywhere, so a stranger loading this public page sees only public apps.
+    //  - Tiles are DOM-built (never innerHTML) and every href/src is scheme-checked
+    //    (http/https only) on BOTH input and render, so no entry can inject markup or a
+    //    javascript:/data: link.
+    (function () {
+      var grid = document.getElementById('apps');
+      var panel = document.getElementById('addPanel');
+      var PKEY = 'eric-apps-private-v1';
+      var publicApps = [];
+
+      function safeUrl(u) {
+        if (typeof u !== 'string' || !u) return null;
+        try {
+          var p = new URL(u, location.href);
+          return (p.protocol === 'https:' || p.protocol === 'http:') ? p.href : null;
+        } catch (_) { return null; }
+      }
+      function isCrossOrigin(href) {
+        try { return new URL(href, location.href).origin !== location.origin; } catch (_) { return false; }
+      }
+      // Theme color guard: accept only a literal hex color (3/4/6/8 digits, the last
+      // form carrying alpha for the glow). Anything else is dropped, so a crafted setup
+      // link can never inject CSS — worst case a tile just keeps its default colors.
+      function safeColor(c) {
+        return (typeof c === 'string' && /^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(c)) ? c : null;
+      }
+      // Icon src guard: allow http(s), a relative path, or a base64 raster data: URI
+      // (an <img> never executes script, and svg/text data URIs are rejected).
+      function safeIconSrc(s) {
+        if (typeof s !== 'string' || !s) return null;
+        if (/^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(s)) return s;
+        var u = safeUrl(s);
+        if (u) return u;
+        if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) return s; // relative path (e.g. public app icon)
+        return null;
+      }
+      function b64urlDecode(s) {
+        s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+        var pad = s.length % 4; if (pad) s += '===='.slice(pad);
+        var bin = atob(s);
+        try {
+          return decodeURIComponent(bin.split('').map(function (ch) {
+            return '%' + ('00' + ch.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+        } catch (_) { return bin; }
+      }
+      function loadPrivate() {
+        try { var v = JSON.parse(localStorage.getItem(PKEY)); return Array.isArray(v) ? v : []; }
+        catch (_) { return []; }
+      }
+      function savePrivate(arr) {
+        try { localStorage.setItem(PKEY, JSON.stringify(arr)); return true; } catch (_) { return false; }
+      }
+      function genId() {
+        try { return crypto.randomUUID(); }
+        catch (_) { return 'p-' + Date.now() + '-' + Math.round(Math.random() * 1e6); }
+      }
+      function monogram(name) {
+        var d = document.createElement('div');
+        d.className = 'mono';
+        d.textContent = (String(name || '?').trim().charAt(0) || '?').toUpperCase();
+        return d;
+      }
+
+      function makeTile(app, isPrivate) {
+        var url = safeUrl(app.url);
+        var a = document.createElement('a');
+        a.className = 'card card-app';
+        a.href = url || '#';
+        a.setAttribute('aria-label', app.name || app.slug || 'app');
+        var external = isPrivate || app.kind === 'link' || (url && isCrossOrigin(url));
+        if (external) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+
+        // Flourishing Ray halo: a soft radial light behind the icon (the app's "ray").
+        var glow = document.createElement('span');
+        glow.className = 'glowlayer';
+        var gc = safeColor(app.glowColor);
+        if (gc) glow.style.background = 'radial-gradient(circle at 50% 42%, ' + gc + ', transparent 60%)';
+        a.appendChild(glow);
+
+        var iconStr = safeIconSrc(app.icon);
+        if (iconStr) {
+          var img = document.createElement('img');
+          img.src = iconStr; img.alt = ''; img.width = 64; img.height = 64;
+          img.style.borderRadius = '14px';
+          img.onerror = function () { this.replaceWith(monogram(app.name)); };
+          a.appendChild(img);
+        } else {
+          a.appendChild(monogram(app.name));
+        }
+
+        var label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = app.name || app.slug || '';
+        var sub = document.createElement('div');
+        sub.className = 'sub';
+        sub.textContent = (app.sub || '') + (external ? '  ↗' : '');
+        a.appendChild(label); a.appendChild(sub);
+
+        // Per-app brand theming (validated hex only): label color + colored border.
+        var lc = safeColor(app.labelColor); if (lc) label.style.color = lc;
+        var bc = safeColor(app.borderColor); if (bc) a.style.border = '2.5px solid ' + bc;
+
+        if (isPrivate) {
+          var rm = document.createElement('span');
+          rm.className = 'remove';
+          rm.setAttribute('role', 'button');
+          rm.setAttribute('tabindex', '0');
+          rm.setAttribute('aria-label', 'Remove ' + (app.name || 'app'));
+          rm.textContent = '×';
+          var doRemove = function (e) {
+            e.preventDefault(); e.stopPropagation();
+            // remove by stable id when present; fall back to url+name for legacy entries
+            var arr = loadPrivate().filter(function (x) {
+              return app.id ? x.id !== app.id : !(x.url === app.url && x.name === app.name);
+            });
+            savePrivate(arr); renderAll();
+          };
+          rm.addEventListener('click', doRemove);
+          rm.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') doRemove(e); });
+          a.appendChild(rm);
+        }
+        return a;
+      }
+
+      function addCard() {
+        var a = document.createElement('a');
+        a.className = 'card card-add';
+        a.href = '#';
+        a.setAttribute('role', 'button');
+        a.setAttribute('aria-label', 'Add an app to this device');
+        var plus = document.createElement('div'); plus.className = 'plus'; plus.textContent = '+';
+        var label = document.createElement('div'); label.className = 'label'; label.textContent = 'Add an app';
+        var sub = document.createElement('div'); sub.className = 'sub'; sub.textContent = 'saved on this device';
+        a.appendChild(plus); a.appendChild(label); a.appendChild(sub);
+        a.addEventListener('click', function (e) { e.preventDefault(); openPanel(); });
+        return a;
+      }
+
+      function renderAll() {
+        grid.innerHTML = '';
+        publicApps.forEach(function (app) { grid.appendChild(makeTile(app, false)); });
+        loadPrivate().forEach(function (app) { grid.appendChild(makeTile(app, true)); });
+        grid.appendChild(addCard());
+      }
+
+      function openPanel() {
+        panel.classList.add('open');
+        document.getElementById('addErr').textContent = '';
+        document.getElementById('appName').focus();
+        panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      function closePanel() {
+        panel.classList.remove('open');
+        panel.reset();
+        document.getElementById('addErr').textContent = '';
+      }
+      document.getElementById('addCancel').addEventListener('click', closePanel);
+      panel.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var name = document.getElementById('appName').value.trim();
+        var url = safeUrl(document.getElementById('appUrl').value.trim());
+        var sub = document.getElementById('appSub').value.trim();
+        var icon = safeIconSrc(document.getElementById('appIcon').value.trim());
+        var err = document.getElementById('addErr');
+        if (!name) { err.textContent = 'Please enter a name.'; return; }
+        if (!url) { err.textContent = 'Please enter a valid http(s) URL.'; return; }
+        var arr = loadPrivate();
+        arr.push({ id: genId(), name: name, url: url, sub: sub, icon: icon || '', kind: 'link' });
+        if (!savePrivate(arr)) { err.textContent = 'Could not save (device storage is blocked).'; return; }
+        closePanel();
+        renderAll();
+      });
+
+      // One-tap setup link: open .../#setup=<base64url JSON of [{name,url,sub,icon}]>
+      // to import private apps onto THIS device. Confirmed, validated, then the hash is
+      // cleared so a refresh won't re-import. Bad/hostile entries are dropped (safeUrl) so
+      // a crafted link can't inject anything dangerous — worst case it adds removable tiles.
+      function importSeed() {
+        var m = /[#&]setup=([^&]+)/.exec(location.hash || '');
+        if (!m) return;
+        var parsed = null;
+        try { parsed = JSON.parse(b64urlDecode(m[1])); } catch (_) { parsed = null; }
+        try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
+        if (!Array.isArray(parsed) || !parsed.length) return;
+        var clean = [];
+        parsed.forEach(function (a) {
+          var u = safeUrl(a && a.url);
+          if (!u) return;
+          clean.push({ id: genId(), name: String((a && a.name) || 'App').slice(0, 40), url: u,
+            sub: String((a && a.sub) || '').slice(0, 60), icon: safeIconSrc(a && a.icon) || '', kind: 'link',
+            labelColor: safeColor(a && a.labelColor) || '', borderColor: safeColor(a && a.borderColor) || '',
+            glowColor: safeColor(a && a.glowColor) || '' });
+        });
+        if (!clean.length) return;
+        var names = clean.map(function (x) { return x.name; }).join(', ');
+        if (!window.confirm('Add ' + clean.length + ' app' + (clean.length > 1 ? 's' : '') + ' to this device?\n\n' + names)) return;
+        var existing = loadPrivate();
+        var byUrl = {}; existing.forEach(function (x, i) { byUrl[x.url] = i; });
+        clean.forEach(function (x) {
+          if (byUrl[x.url] !== undefined) {
+            // re-tapping a setup link REFRESHES an existing tile, keeps its id. Only
+            // overwrite a field the new link actually carries, so a themeless/older
+            // re-tap never WIPES an existing tile's name/icon/theme.
+            var e = existing[byUrl[x.url]];
+            if (x.name) e.name = x.name;
+            if (x.sub) e.sub = x.sub;
+            if (x.icon) e.icon = x.icon;
+            if (x.labelColor) e.labelColor = x.labelColor;
+            if (x.borderColor) e.borderColor = x.borderColor;
+            if (x.glowColor) e.glowColor = x.glowColor;
+          } else {
+            byUrl[x.url] = existing.length; existing.push(x);
+          }
+        });
+        savePrivate(existing);
+      }
+
+      // Load public apps, then render public + private + the add tile.
+      (async function () {
+        importSeed(); // honor a one-tap setup link before first render
+        try {
+          var res = await fetch('apps.json?cb=' + Date.now(), { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          var apps = await res.json();
+          publicApps = Array.isArray(apps) ? apps : [];
+        } catch (e) {
+          // Stay usable even if apps.json is unreachable: fall back to the known-good tile.
+          publicApps = [{ slug: 'chief-of-staff', name: 'Chief of Staff', sub: 'are my automations healthy?', icon: 'apps/chief-of-staff/icon-any-192.png', kind: 'hosted', url: 'apps/chief-of-staff/' }];
+        }
+        renderAll();
+      })();
+    })();
+  </script>
+</body>
+</html>
