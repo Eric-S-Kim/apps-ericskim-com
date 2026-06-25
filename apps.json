@@ -9,16 +9,5 @@
     "labelColor": "#7a1212",
     "borderColor": "#cc2222",
     "glowColor": "#cc222252"
-  },
-  {
-    "slug": "class-booker",
-    "name": "Class Booker",
-    "sub": "book my movement classes",
-    "icon": "icons/class-booker-192.png",
-    "kind": "hosted",
-    "url": "apps/class-booker/",
-    "labelColor": "#006823",
-    "borderColor": "#009B34",
-    "glowColor": "#009B3452"
   }
 ]
