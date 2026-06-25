@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0D9488">
+<meta name="theme-color" content="#0891B2">
 <title>Class Booker</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon-any-192.png">
@@ -12,8 +12,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Lustria&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --teal-900:#134E4A; --teal-800:#115E59; --teal-700:#0F766E; --teal-600:#0D9488;
-    --teal-300:#5EEAD4; --teal-100:#CCFBF1; --teal-50:#EFFBF9;
+    --teal-900:#0C4A5A; --teal-800:#115E75; --teal-700:#0E7490; --teal-600:#0891B2;
+    --teal-300:#67E8F9; --teal-100:#CFF7FB; --teal-50:#ECFDFF;
     --gold:#F59E0B; --cream:#E9E2D1; --sand:#D6CDB6;
     --ink:#131313; --text-secondary:#5a5f5e; --white:#fff;
     --serif:"Lustria",Georgia,serif;
@@ -24,8 +24,8 @@
   body{
     margin:0; font-family:var(--sans); color:var(--ink);
     background:
-      radial-gradient(130% 65% at 50% -8%, rgba(13,148,136,.16), transparent 55%),
-      #E9F6F4;
+      radial-gradient(130% 65% at 50% -8%, rgba(8,145,178,.17), transparent 55%),
+      #E4F2F7;
     min-height:100dvh; line-height:1.45;
     padding:max(22px,env(safe-area-inset-top)) 18px calc(30px + env(safe-area-inset-bottom));
   }
@@ -47,13 +47,13 @@
   .cards{display:flex;flex-direction:column;gap:14px;margin-top:20px}
   a.card{
     display:block;text-decoration:none;color:inherit;position:relative;
-    background:var(--white);border:1px solid rgba(13,148,136,.16);
+    background:var(--white);border:1px solid rgba(8,145,178,.18);
     border-radius:22px;padding:18px 20px;
-    box-shadow:0 1px 2px rgba(19,78,74,.05), 0 10px 26px rgba(13,148,136,.10);
+    box-shadow:0 1px 2px rgba(12,74,90,.05), 0 10px 26px rgba(8,145,178,.12);
     transition:transform .09s ease, box-shadow .18s ease;
     -webkit-tap-highlight-color:transparent;
   }
-  a.card:active{transform:scale(.98);box-shadow:0 2px 8px rgba(13,148,136,.14)}
+  a.card:active{transform:scale(.98);box-shadow:0 2px 8px rgba(8,145,178,.16)}
   .row{display:flex;align-items:center;gap:14px}
   .chip{
     flex:0 0 auto;width:46px;height:46px;border-radius:14px;
