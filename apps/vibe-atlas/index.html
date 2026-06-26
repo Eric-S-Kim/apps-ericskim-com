@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vibe Finder · The Source Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&family=Hanken+Grotesk:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bone:#F1E7D3; --ink:#161310;
+    --cobalt:#1F4E8C; --terra:#BE4A2B; --olive:#6E7B36; --plum:#46294F;
+    --teal:#1E6E66; --mustard:#D69A28; --ochre:#C07C24; --oxblood:#8C2B22;
+    --char:#171717; --cream:#FBF4E6;
+    -webkit-text-size-adjust:100%; text-size-adjust:100%;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Hanken Grotesk",system-ui,sans-serif;
+    background:var(--bone); color:var(--ink); line-height:1.5;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:0 18px}
+
+  /* ---- cubist decorative shards ---- */
+  .shard{position:absolute;z-index:0;opacity:.9;pointer-events:none}
+  .tri{width:0;height:0}
+
+  /* ---- HERO ---- */
+  header.hero{position:relative;overflow:hidden;background:var(--bone);
+    padding:64px 0 48px;border-bottom:6px solid var(--ink)}
+  .hero .shard.s1{top:-40px;left:-30px;width:240px;height:240px;background:var(--mustard);
+    transform:rotate(18deg);clip-path:polygon(0 0,100% 18%,72% 100%,0 70%)}
+  .hero .shard.s2{top:30px;right:-50px;width:300px;height:300px;background:var(--cobalt);
+    clip-path:polygon(20% 0,100% 0,100% 100%,0 76%)}
+  .hero .shard.s3{bottom:-60px;left:34%;width:200px;height:200px;background:var(--terra);
+    transform:rotate(-12deg);clip-path:polygon(50% 0,100% 100%,0 100%)}
+  .hero .shard.s4{top:120px;left:18%;width:90px;height:90px;background:var(--oxblood);border-radius:50%}
+  .eyebrow{position:relative;z-index:2;font-weight:800;letter-spacing:.34em;text-transform:uppercase;
+    font-size:13px;color:var(--terra)}
+  h1.title{position:relative;z-index:2;font-family:"Anton",sans-serif;font-weight:400;
+    font-size:clamp(54px,12vw,132px);line-height:.92;letter-spacing:.01em;text-transform:uppercase;
+    margin:8px 0 6px;color:var(--ink)}
+  h1.title .blue{color:var(--cobalt)} h1.title .red{color:var(--terra)}
+  .lede{position:relative;z-index:2;max-width:640px;font-family:"Fraunces",serif;font-style:italic;
+    font-size:clamp(19px,2.6vw,27px);line-height:1.35;color:#3a332a;margin:14px 0 0}
+  .face{position:absolute;right:24px;bottom:-2px;z-index:2;width:clamp(130px,22vw,230px);height:auto}
+
+  /* ---- stat strip ---- */
+  .stats{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}
+  .stat{background:var(--ink);color:var(--cream);padding:12px 18px;
+    clip-path:polygon(0 0,100% 0,94% 100%,0 100%)}
+  .stat b{font-family:"Anton",sans-serif;font-size:30px;display:block;line-height:1}
+  .stat span{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+
+  /* ---- legend ---- */
+  .legend{display:flex;flex-wrap:wrap;gap:18px;padding:22px 0;font-size:13px;font-weight:600}
+  .legend i{font-style:normal;display:inline-flex;align-items:center;gap:7px}
+  .dot{width:13px;height:13px;display:inline-block}
+  .dot.live{background:var(--olive)} .dot.cat{background:var(--ochre);border-radius:50%}
+  .dot.frontier{background:var(--ink);clip-path:polygon(50% 0,100% 100%,0 100%)}
+
+  /* ---- panels ---- */
+  section.panel{position:relative;color:var(--cream);padding:46px 0 50px;overflow:hidden}
+  section.panel + section.panel{margin-top:0}
+  .panel .wrap{position:relative;z-index:2}
+  .num{font-family:"Anton",sans-serif;font-size:clamp(40px,7vw,76px);line-height:.8;opacity:.32}
+  .ptitle{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:clamp(30px,5.4vw,58px);
+    line-height:.95;margin:2px 0 8px;letter-spacing:.01em}
+  .ptag{font-family:"Fraunces",serif;font-style:italic;font-size:clamp(16px,2.1vw,21px);
+    max-width:680px;opacity:.95;margin-bottom:22px}
+  .chips{display:flex;flex-wrap:wrap;gap:9px}
+  .chip{background:rgba(251,244,230,.14);border:1.5px solid rgba(251,244,230,.5);
+    color:var(--cream);padding:7px 13px;border-radius:2px;font-size:14px;font-weight:600;
+    backdrop-filter:blur(1px)}
+  .chip.star{background:var(--cream);color:var(--ink);border-color:var(--cream)}
+  .chip.star::before{content:"\2605 ";font-size:11px}
+
+  /* ink-on-light panels */
+  .panel.light{color:var(--ink)}
+  .panel.light .chip{background:rgba(22,19,16,.07);border-color:rgba(22,19,16,.4);color:var(--ink)}
+  .panel.light .chip.star{background:var(--ink);color:var(--cream)}
+
+  /* per-panel colours + angled top edge */
+  .p1{background:var(--cobalt)} .p2{background:var(--terra)} .p3{background:var(--olive)}
+  .p4{background:var(--plum)} .p5{background:var(--teal)} .p6{background:var(--mustard)}
+  .p7{background:var(--ochre)} .p8{background:var(--oxblood)} .p9{background:var(--char)}
+  .p10{background:#241f1a}
+
+  /* floating cubist accents inside panels */
+  .panel .acc{position:absolute;z-index:1;opacity:.5}
+  .panel .a-tl{top:-30px;left:-26px;width:150px;height:150px;transform:rotate(14deg)}
+  .panel .a-br{bottom:-40px;right:-30px;width:190px;height:190px;transform:rotate(-10deg)}
+  .sq{clip-path:polygon(0 0,100% 14%,86% 100%,0 84%)}
+  .cir{border-radius:50%}
+  .tr{clip-path:polygon(50% 0,100% 100%,0 100%)}
+
+  /* ---- closing ---- */
+  footer{background:var(--bone);color:var(--ink);padding:54px 0 70px;position:relative;overflow:hidden;
+    border-top:6px solid var(--ink)}
+  footer .shard.f1{top:-40px;right:6%;width:170px;height:170px;background:var(--teal);transform:rotate(20deg);
+    clip-path:polygon(0 0,100% 24%,78% 100%,0 72%)}
+  .closing{position:relative;z-index:2;max-width:720px}
+  .closing h2{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:clamp(30px,6vw,60px);
+    line-height:.95;margin-bottom:14px}
+  .closing h2 .y{color:var(--terra)}
+  .closing p{font-family:"Fraunces",serif;font-size:clamp(18px,2.4vw,24px);line-height:1.45;color:#3a332a}
+  .sign{margin-top:26px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;font-size:13px;color:var(--cobalt)}
+
+  @media(max-width:560px){
+    header.hero{padding:44px 0 36px}
+    .face{width:110px;right:10px;opacity:.92}
+    .stat b{font-size:24px}
+    section.panel{padding:38px 0 40px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== HERO ===================== -->
+<header class="hero">
+  <div class="shard s1"></div><div class="shard s2"></div>
+  <div class="shard s3"></div><div class="shard s4"></div>
+  <svg class="face" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <polygon points="20,40 120,10 160,90 110,140 30,150" fill="#D69A28"/>
+    <polygon points="120,10 190,60 160,150 110,140 160,90" fill="#BE4A2B"/>
+    <polygon points="30,150 110,140 130,230 50,235" fill="#1F4E8C"/>
+    <path d="M40,60 q60,-30 110,10" stroke="#161310" stroke-width="4" fill="none"/>
+    <circle cx="78" cy="86" r="13" fill="#FBF4E6" stroke="#161310" stroke-width="4"/>
+    <circle cx="78" cy="86" r="4" fill="#161310"/>
+    <polygon points="120,70 150,86 120,104" fill="#FBF4E6" stroke="#161310" stroke-width="3"/>
+    <path d="M70,120 q30,26 64,4" stroke="#161310" stroke-width="4" fill="none"/>
+    <line x1="118" y1="40" x2="118" y2="150" stroke="#161310" stroke-width="3" opacity=".5"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow">A Couple's Map of the City</div>
+    <h1 class="title">Vibe<br><span class="blue">Finder</span> <span class="red">Atlas</span></h1>
+    <p class="lede">Every corner of Vancouver we're teaching the engine to listen to — so the two of us never miss the night that was made for us. Cast the widest net; let taste do the picking.</p>
+    <div class="stats">
+      <div class="stat"><b>870+</b><span>Sources mapped</span></div>
+      <div class="stat"><b>10</b><span>Worlds</span></div>
+      <div class="stat"><b>17</b><span>Live & pulling now</span></div>
+      <div class="stat"><b>1</b><span>Tight nightly shortlist</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="legend">
+    <i><span class="dot live"></span> Live in the pipeline now</i>
+    <i><span class="dot cat"></span> Mapped &amp; ready to wire</i>
+    <i><span class="dot frontier"></span> Word-of-mouth frontier</i>
+    <i>&#9733; = highest taste-density</i>
+  </div>
+</div>
+
+<!-- ===================== PANELS ===================== -->
+<section class="panel p1">
+  <span class="acc a-tl sq" style="background:#D69A28"></span><span class="acc a-br cir" style="background:#BE4A2B"></span>
+  <div class="wrap">
+    <div class="num">01</div>
+    <h2 class="ptitle">The Live Spine</h2>
+    <p class="ptag">The feeds already breathing — civic calendars, the big hubs and ticketers, wired and pulling events tonight.</p>
+    <div class="chips">
+      <span class="chip star">Luma</span><span class="chip star">City of Vancouver · Trumba</span><span class="chip">Eventbrite</span>
+      <span class="chip">Do604</span><span class="chip">Showpass</span><span class="chip">Resident Advisor</span>
+      <span class="chip">AllEvents.in</span><span class="chip star">The Dance Centre</span><span class="chip">Bridge &amp; Enrich</span>
+      <span class="chip star">Stanley Park Ecology</span><span class="chip">Squamish Nation</span><span class="chip">Beaumont Studios</span>
+      <span class="chip">GVPTA Theatre Guide</span><span class="chip">Roundhouse</span><span class="chip">Burnaby Neighbourhood House</span>
+      <span class="chip">Kirtan Vancouver</span><span class="chip">Mountain Rain Zen</span><span class="chip">Nature Vancouver</span><span class="chip">The Cultch</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel p2">
+  <span class="acc a-tl tr" style="background:#1F4E8C"></span><span class="acc a-br sq" style="background:#D69A28"></span>
+  <div class="wrap">
+    <div class="num">02</div>
+    <h2 class="ptitle">Dance &amp; Embodied Movement</h2>
+    <p class="ptag">Our heartbeat — ecstatic floors, 5Rhythms, salsa, the facilitators whose nights never touch a ticketing site.</p>
+    <div class="chips">
+      <span class="chip star">The Flying Sage</span><span class="chip star">Hassti · Ride the Rhythm</span><span class="chip star">Gloria Glo</span>
+      <span class="chip">Synergy Ecstatic Dance</span><span class="chip">Ecstatic Dance Vancouver</span><span class="chip">5Rhythms Vancouver</span>
+      <span class="chip">EDAM</span><span class="chip">Silent Discos BC</span><span class="chip">Evolved Movement</span>
+      <span class="chip">Vancity Movement</span><span class="chip">Public Disco</span><span class="chip">Roger Salsa</span>
+      <span class="chip">GoLatinDance</span><span class="chip">Salsa &amp; Bachata Events</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel p3">
+  <span class="acc a-tl cir" style="background:#D69A28"></span><span class="acc a-br tr" style="background:#FBF4E6"></span>
+  <div class="wrap">
+    <div class="num">03</div>
+    <h2 class="ptitle">Ceremony, Wellness &amp; Inner Peace</h2>
+    <p class="ptag">Sound baths, cacao, breathwork, Zen and the quiet-wonder lineage — the practitioners who only announce by list.</p>
+    <div class="chips">
+      <span class="chip star">SomaHeart · Aga &amp; Deus</span><span class="chip star">Intronaut · Rados</span><span class="chip star">Bettina Rothe</span>
+      <span class="chip">Naomi Prema Devi</span><span class="chip">Masha Shakti</span><span class="chip">Mystic Meditations</span>
+      <span class="chip">Mountain Rain Zen</span><span class="chip">Dharma Drum</span><span class="chip">BC Insight Meditation</span>
+      <span class="chip">Goenka Vipassana</span><span class="chip">Holotropic Breathwork</span><span class="chip">ANAHATA Cacao</span>
+      <span class="chip">Give Peace a Chant</span><span class="chip">Bhakti Marga</span><span class="chip">Numinus Circles</span>
+      <span class="chip">Vancouver Psychedelic Society</span><span class="chip">Spirit Plant Medicine Conf</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel p4">
+  <span class="acc a-tl sq" style="background:#1E6E66"></span><span class="acc a-br cir" style="background:#D69A28"></span>
+  <div class="wrap">
+    <div class="num">04</div>
+    <h2 class="ptitle">Music &amp; Nightlife</h2>
+    <p class="ptag">Melodic house to the Commodore floor — promoters, presale lists and the artists we'd cross town for.</p>
+    <div class="chips">
+      <span class="chip star">Blueprint Events</span><span class="chip">Timbre Concerts</span><span class="chip">Foundation Series</span>
+      <span class="chip">Stacked World</span><span class="chip">ENSO · Aurum</span><span class="chip">Lobe Studio</span>
+      <span class="chip">Public Disco</span><span class="chip">19hz.info</span><span class="chip">Edmtrain</span>
+      <span class="chip">Commodore</span><span class="chip">Celebrities</span><span class="chip">Fox Cabaret</span><span class="chip">Orpheum</span>
+      <span class="chip">Ticketmaster Discovery</span><span class="chip star">Nora En Pure</span><span class="chip">Lane 8</span>
+      <span class="chip">Above &amp; Beyond</span><span class="chip">Gareth Emery</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel p5">
+  <span class="acc a-tl tr" style="background:#D69A28"></span><span class="acc a-br sq" style="background:#FBF4E6"></span>
+  <div class="wrap">
+    <div class="num">05</div>
+    <h2 class="ptitle">Arts, Theatre &amp; Big Ideas</h2>
+    <p class="ptag">Ballet, festival theatre, experimental stages and the free serious-ideas layer no aggregator indexes.</p>
+    <div class="chips">
+      <span class="chip star">Ballet BC</span><span class="chip star">PuSh Festival</span><span class="chip">VIFF</span><span class="chip">The Cultch</span>
+      <span class="chip">DanceHouse</span><span class="chip">Boca del Lupo</span><span class="chip">Firehall</span><span class="chip">Rio Theatre</span>
+      <span class="chip">Western Front</span><span class="chip">VIVO Media Arts</span><span class="chip">Contemporary Art Gallery</span><span class="chip">Akimbo</span>
+      <span class="chip">Music on Main</span><span class="chip">Vancouver New Music</span><span class="chip">Green College Lectures</span>
+      <span class="chip">Vancouver Institute</span><span class="chip">SFU Public Square</span><span class="chip">PhilEvents</span>
+      <span class="chip">Nerd Nite</span><span class="chip">Arts Club</span><span class="chip">Vancouver Opera</span><span class="chip">VSO</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel p6 light">
+  <span class="acc a-tl cir" style="background:#1F4E8C"></span><span class="acc a-br tr" style="background:#8C2B22"></span>
+  <div class="wrap">
+    <div class="num">06</div>
+    <h2 class="ptitle">Outdoors &amp; Nature</h2>
+    <p class="ptag">Full-moon paddles, alpine trips, drum circles and golden-hour wonder — adventure that needs no ticket.</p>
+    <div class="chips">
+      <span class="chip star">Stanley Park Ecology</span><span class="chip">Nature Vancouver</span><span class="chip">Jericho Beach Kayak</span>
+      <span class="chip">Brahm's Tams Drum Circle</span><span class="chip">Grouse Mountain</span><span class="chip">Sea to Sky Gondola</span>
+      <span class="chip">ACC Vancouver</span><span class="chip">BCMC</span><span class="chip">Wanderung</span>
+      <span class="chip">WildResearch · Iona Bird</span><span class="chip">Beaver Canoe Club</span><span class="chip">VanDusen</span>
+      <span class="chip">UBC Botanical Garden</span><span class="chip">RASC Astronomy</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel p7 light">
+  <span class="acc a-tl sq" style="background:#1E6E66"></span><span class="acc a-br cir" style="background:#46294F"></span>
+  <div class="wrap">
+    <div class="num">07</div>
+    <h2 class="ptitle">Culture &amp; Diaspora</h2>
+    <p class="ptag">The off-platform pipelines — consulates, cultural societies, Indigenous-led festivals — where heritage events quietly live.</p>
+    <div class="chips">
+      <span class="chip star">Korean Cultural Heritage Society</span><span class="chip">Korean Cultural Centre Canada</span>
+      <span class="chip star">Full Circle · Talking Stick</span><span class="chip">Indian Summer Festival</span><span class="chip">Squamish Nation</span>
+      <span class="chip">Powell Street Festival</span><span class="chip">Nikkei Centre</span><span class="chip">Latincouver</span>
+      <span class="chip">Lapu-Lapu · Filipino BC</span><span class="chip">ExplorASIAN</span><span class="chip">Chinese Cultural Centre</span>
+      <span class="chip">Persian · EventYab</span><span class="chip">Naver Band (Korean)</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel p8">
+  <span class="acc a-tl tr" style="background:#D69A28"></span><span class="acc a-br sq" style="background:#1F4E8C"></span>
+  <div class="wrap">
+    <div class="num">08</div>
+    <h2 class="ptitle">Classes, Makers &amp; Learning</h2>
+    <p class="ptag">One clever sniffer, many studios — glassblowing, ceramics, freediving, swordplay, comedy, cooking, climbing.</p>
+    <div class="chips">
+      <span class="chip">Terminal City Glass</span><span class="chip">HiDe Ceramic Works</span><span class="chip">Maiwa</span>
+      <span class="chip">Dirty Apron</span><span class="chip">NWCAV Cooking</span><span class="chip">Academie Duello</span>
+      <span class="chip">Diving Sports · Freediving</span><span class="chip">Blind Tiger Comedy</span><span class="chip">The Hive Climbing</span>
+      <span class="chip">EartHand</span><span class="chip">Vancouver Mycological Society</span><span class="chip">CircusWest</span>
+      <span class="chip">Origins Parkour</span><span class="chip">Richmond Archery</span><span class="chip">4Cats Art</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel p9">
+  <span class="acc a-tl cir" style="background:#BE4A2B"></span><span class="acc a-br tr" style="background:#D69A28"></span>
+  <div class="wrap">
+    <div class="num">09</div>
+    <h2 class="ptitle">The Word-of-Mouth Frontier</h2>
+    <p class="ptag">Where our best nights actually came from — newsletters, the group chats, the Instagram whisper-network. The richest, hardest signal.</p>
+    <div class="chips">
+      <span class="chip star">Newsletters &rarr; Gmail (PuSh, SomaHeart, Bettina, Miss604)</span>
+      <span class="chip star">Instagram · 192 handles</span><span class="chip">@the_flyingsage</span><span class="chip">@gloriaglo.rhythms</span>
+      <span class="chip">WhatsApp · Party Scientist</span><span class="chip">WhatsApp · Flying Sage Nest</span><span class="chip">Roger Salsa chat</span>
+      <span class="chip">Telegram · Vancouver Events</span><span class="chip">Telegram · Life in Vancouver</span>
+      <span class="chip">Discord · Greater Vancouver</span><span class="chip">Discord · LIPS</span><span class="chip">Discord · Rave Community</span>
+      <span class="chip">FB · Synergy &amp; 5Rhythms groups</span><span class="chip">Roots Collective</span><span class="chip">Wanderung</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel p10">
+  <span class="acc a-br sq" style="background:#1E6E66"></span>
+  <div class="wrap">
+    <div class="num">10</div>
+    <h2 class="ptitle">The Honest Edge</h2>
+    <p class="ptag">The ~3-4% no feed can ever catch — a friend's text, a walk-up, a private ceremony. This is where <em>we</em> come in: one tap to share it, and it lands on the board.</p>
+    <div class="chips">
+      <span class="chip">Paste-a-link capture</span><span class="chip">Paste-a-caption</span><span class="chip">Forwarded emails</span>
+      <span class="chip">The Party Scientist</span><span class="chip">Private referral ceremonies</span><span class="chip">Spontaneous walk-ups</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CLOSING ===================== -->
+<footer>
+  <div class="shard f1"></div>
+  <div class="wrap closing">
+    <h2>Wide net, <span class="y">picky</span> taste.</h2>
+    <p>None of this is a to-do list. It's the ocean we fish from — hundreds of sources pouring in, so the engine can hand us back just the five or six things that are actually <em>us</em>, tonight, near home. The breadth is the whole bet: the more we hear, the better it gets at knowing what we'd love.</p>
+    <div class="sign">For Jung &amp; Eric · Vibe Finder</div>
+  </div>
+</footer>
+
+</body>
+</html>
