@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "household": ["you"],
+  "items": [
+    {
+      "id": "demo",
+      "name": "Your items appear here",
+      "brand": "",
+      "category": "",
+      "why": "Tap your private setup link (emailed to you) to load your own shelf onto this device. Your items stay only on your phone.",
+      "variant": { "label": "—", "mustMatch": [], "mustNotMatch": [] },
+      "addedDate": "2026-06-28",
+      "vendors": [
+        { "name": "—", "platform": "other", "productUrl": "https://Eric-S-Kim.github.io/apps-ericskim-com/", "status": "unresolved" }
+      ]
+    }
+  ]
+}

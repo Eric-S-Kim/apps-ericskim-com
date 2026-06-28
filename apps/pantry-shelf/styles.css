@@ -1,0 +1,101 @@
+/* Living Pantry Shelf — "apothecary cockpit" art direction.
+   Warm paper ground, deep botanical green, serif display. Not default-SaaS. */
+:root {
+  --paper: #f6f3ea;
+  --ink: #20271f;
+  --green: #2f5d45;
+  --green-deep: #1f3d2e;
+  --gold: #b08433;
+  --line: #d8d0bd;
+  --card: #fffdf7;
+  --muted: #6a6f63;
+  --sold: #9a4a3a;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } /* Android Chrome font-boost guard */
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "TT Commons", "Inter", system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
+.masthead {
+  border-bottom: 2px solid var(--green-deep);
+  padding: 28px 22px 18px;
+  max-width: 760px; margin: 0 auto;
+}
+.masthead h1 {
+  font-family: Lustria, Georgia, "Times New Roman", serif;
+  font-weight: 400; font-size: 30px; letter-spacing: .2px; margin: 0; color: var(--green-deep);
+}
+.masthead .sub { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 20px 22px 60px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 20px 18px;
+  margin: 18px 0;
+  box-shadow: 0 1px 0 rgba(31,61,46,.04), 0 10px 26px -20px rgba(31,61,46,.5);
+}
+.head { display: flex; gap: 16px; align-items: flex-start; }
+.head-text { flex: 1; min-width: 0; }
+.thumb {
+  width: 72px; height: 72px; flex: none; border-radius: 10px; object-fit: contain;
+  background: #fff; border: 1px solid var(--line); padding: 4px;
+}
+.thumb-empty {
+  display: flex; align-items: center; justify-content: center;
+  font-family: Lustria, Georgia, serif; font-size: 28px; color: var(--green-deep);
+  background: #e9efe5; border-color: #cdddc7;
+}
+.card h2 {
+  font-family: Lustria, Georgia, serif; font-weight: 400; font-size: 21px;
+  margin: 0 0 2px; color: var(--ink);
+}
+.variant {
+  display: inline-block; margin: 6px 0 10px;
+  font-size: 13px; font-weight: 600; color: var(--green-deep);
+  background: #e9efe5; border: 1px solid #cdddc7; border-radius: 999px; padding: 3px 11px;
+}
+.why { color: var(--muted); font-size: 14px; font-style: italic; margin: 0 0 14px; }
+
+.status { font-size: 13.5px; font-weight: 600; margin: 2px 0 12px; }
+.status.in_stock_snapshot { color: var(--green); }
+.status.sold_out { color: var(--sold); }
+.status.unresolved, .status.unknown { color: var(--gold); }
+
+.rows { border-top: 1px dashed var(--line); padding-top: 12px; }
+.row { display: flex; justify-content: space-between; gap: 14px; font-size: 14px; padding: 3px 0; }
+.row .k { color: var(--muted); }
+.row .v { text-align: right; }
+.asof { color: var(--muted); font-size: 12px; }
+.breakdown { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+button, .btn {
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  border-radius: 10px; padding: 10px 15px; border: 1px solid var(--green-deep);
+  background: var(--green-deep); color: #f6f3ea; text-decoration: none; display: inline-block;
+}
+button.ghost, .btn.ghost { background: transparent; color: var(--green-deep); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.btn.gold { background: var(--gold); border-color: var(--gold); color: #2a2310; }
+
+.alts { margin-top: 14px; font-size: 13px; color: var(--muted); }
+.alts .alt { padding: 6px 0; border-top: 1px solid var(--line); }
+
+.toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+  background: var(--green-deep); color: #f6f3ea; padding: 11px 16px; border-radius: 10px;
+  font-size: 14px; box-shadow: 0 10px 30px -10px rgba(0,0,0,.5); opacity: 0; pointer-events: none;
+  transition: opacity .18s ease; max-width: 90vw;
+}
+.toast.show { opacity: 1; }
+.banner {
+  background: #fbf4e2; border: 1px solid var(--gold); color: #6a531c;
+  border-radius: 10px; padding: 12px 14px; margin: 6px 0 4px; font-size: 13.5px;
+}
+.footnote { color: var(--muted); font-size: 12.5px; margin-top: 30px; border-top: 1px solid var(--line); padding-top: 14px; }

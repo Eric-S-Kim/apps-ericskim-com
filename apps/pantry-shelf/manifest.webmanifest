@@ -1,0 +1,13 @@
+{
+  "name": "The Pantry Shelf",
+  "short_name": "Pantry",
+  "description": "Private reorder cockpit for Eric & Jung.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f3ea",
+  "theme_color": "#1f3d2e",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
