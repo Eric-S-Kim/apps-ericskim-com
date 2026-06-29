@@ -66,7 +66,8 @@ export function pickVendor(item) {
 export function buildConfidenceCard(item, vendor) {
   const snap = (vendor && vendor.snapshot) || null;
   const status = (vendor && vendor.status) || 'unknown';
-  const teleportUrl = status === 'in_stock_snapshot' ? buildCartUrl(vendor) : null;
+  // Offer the reorder teleport for any buyable status; only sold-out / unresolved get none.
+  const teleportUrl = (status === 'sold_out' || status === 'unresolved') ? null : buildCartUrl(vendor);
   return {
     title: item.name,
     variantLocked: item.variant.label,          // exact variant, always shown
@@ -88,6 +89,7 @@ export function snapshotStatusLabel(status, snap) {
   const asOf = snap ? ` (as of ${snap.asOf})` : '';
   switch (status) {
     case 'in_stock_snapshot': return `In stock${asOf} — verify for live truth`;
+    case 'snapshot':          return `Last bought${asOf} — tap to reorder`;
     case 'sold_out':          return `Sold out${asOf}`;
     case 'unresolved':        return `Not yet verified — tap Verify`;
     default:                  return `Unknown — tap Verify`;
