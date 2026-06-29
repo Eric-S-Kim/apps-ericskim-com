@@ -80,11 +80,22 @@ function b64urlDecode(s) {
   return decodeURIComponent(escape(atob(s)));
 }
 
-function maybeImportFromHash() {
-  const m = (location.hash || '').match(/[#&]data=([^&]+)/);
-  if (!m) return;
+async function maybeImportFromHash() {
+  const hash = location.hash || '';
+  const dataM = hash.match(/[#&]data=([^&]+)/);
+  const fetchM = hash.match(/[#&]fetch=([^&]+)/);
+  if (!dataM && !fetchM) return;
   try {
-    const data = JSON.parse(b64urlDecode(m[1]));
+    let data = null;
+    if (dataM) {
+      data = JSON.parse(b64urlDecode(dataM[1]));
+    } else {
+      const url = decodeURIComponent(fetchM[1]);
+      // Only allow fetching the transfer file from GitHub gist raw (no arbitrary SSRF target).
+      if (!/^https:\/\/gist\.githubusercontent\.com\//.test(url)) throw new Error('untrusted fetch url');
+      const res = await fetch(url, { cache: 'no-store' });
+      data = await res.json();
+    }
     if (!data || !Array.isArray(data.items)) throw new Error('not a shelf');
     if (confirm(`Load your shelf (${data.items.length} items) onto THIS device? It stays only here.`)) {
       localStorage.setItem(LS_KEY, JSON.stringify(data));
@@ -96,7 +107,7 @@ function maybeImportFromHash() {
 }
 
 async function getShelf() {
-  maybeImportFromHash();
+  await maybeImportFromHash();
   const raw = localStorage.getItem(LS_KEY);
   if (raw) {
     try { return { shelf: JSON.parse(raw), source: 'device' }; } catch {}
