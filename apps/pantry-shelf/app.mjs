@@ -28,26 +28,49 @@ async function copy(text, label) {
   catch { window.prompt(`${label} — copy this into Claude:`, text); }
 }
 
+// Each card is calm by default: 6 always-visible facts (image · name · variant · price ·
+// status chip · Reorder). The other 7 (full price w/ asOf, status detail, seller, variant
+// guards, why, other vendors, Verify/Hunt) live behind an MB3-style "Show details"
+// disclosure — native <details>, no toggle JS. Hunt also surfaces inline only when sold out.
 function cardHTML(item) {
   const vendor = pickVendor(item);
   const c = buildConfidenceCard(item, vendor);
-  const breakdown = c.priceBreakdown
-    ? `<div class="breakdown">item ${c.priceBreakdown.item} + import ${c.priceBreakdown.importFees} + ship ${c.priceBreakdown.shipping} (customs prepaid)</div>` : '';
-  const rows = [
-    c.priceText ? `<div class="row"><span class="k">Landed price</span><span class="v">${esc(c.priceText)}${breakdown}</span></div>` : '',
-    c.sellerText ? `<div class="row"><span class="k">Seller</span><span class="v">${esc(c.sellerText)}</span></div>` : '',
-    c.etaText ? `<div class="row"><span class="k">Arrives</span><span class="v">${esc(c.etaText)}</span></div>` : '',
-  ].join('');
-  const href = safeHref(c.teleportUrl);
-  const reorder = href
-    ? `<a class="btn" href="${esc(href)}" target="_blank" rel="noopener">${esc(c.teleportLabel)} →</a>`
-    : `<button class="ghost" disabled>No verified in-stock vendor</button>`;
   const status = (vendor && vendor.status) || 'unknown';
+  const href = safeHref(c.teleportUrl);
+
+  // --- Simple view (always visible) ---
+  const img = safeHref(item.image)
+    ? `<img class="thumb" src="${esc(item.image)}" alt="" referrerpolicy="no-referrer">`
+    : `<div class="thumb thumb-empty">${esc((item.brand || item.name || '?').slice(0, 1))}</div>`;
+  const priceChip = c.priceShort ? `<span class="price-short">${esc(c.priceShort)}</span>` : '';
+  const statusChip = `<span class="chip ${esc(status)}">${esc(c.statusShort)}</span>`;
+  const reorder = href
+    ? `<a class="btn" href="${esc(href)}" target="_blank" rel="noopener">Reorder →</a>`
+    : `<button class="ghost" disabled>No verified vendor</button>`;
+  // Hunt is contextual: shown inline ONLY when the item is actually sold out.
+  const huntInline = status === 'sold_out'
+    ? `<button class="ghost" data-hunt="${esc(item.id)}">Find it elsewhere</button>` : '';
+
+  // --- Details (the other 7, collapsed) ---
+  const guards = [
+    (item.variant.mustMatch || []).length ? `must be: ${esc(item.variant.mustMatch.join(' · '))}` : '',
+    (item.variant.mustNotMatch || []).length ? `never: ${esc(item.variant.mustNotMatch.join(' · '))}` : '',
+  ].filter(Boolean).join(' — ');
+  const detailRows = [
+    c.priceText ? `<div class="row"><span class="k">Landed price</span><span class="v">${esc(c.priceText)}</span></div>` : '',
+    c.statusLabel ? `<div class="row"><span class="k">Status</span><span class="v">${esc(c.statusLabel)}</span></div>` : '',
+    c.sellerText ? `<div class="row"><span class="k">Seller</span><span class="v">${esc(c.sellerText)}</span></div>` : '',
+    guards ? `<div class="row"><span class="k">Variant lock</span><span class="v">${guards}</span></div>` : '',
+  ].join('');
+  const why = c.why ? `<p class="why">${esc(c.why)}</p>` : '';
   const alts = (item.vendors || []).slice(1).map(v =>
     `<div class="alt">${esc(v.name)} — ${esc(v.status.replace('_', ' '))}${v.snapshot ? ` (as of ${esc(v.snapshot.asOf)})` : ''}</div>`).join('');
-  const img = safeHref(item.image)
-    ? `<img class="thumb" src="${esc(item.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-    : `<div class="thumb thumb-empty">${esc((item.brand || item.name || '?').slice(0, 1))}</div>`;
+  const altBlock = alts ? `<div class="alts"><strong>Other vendors:</strong>${alts}</div>` : '';
+  const detailActions =
+    `<button class="ghost" data-verify="${esc(item.id)}">Verify live (ask Claude)</button>` +
+    (status !== 'sold_out' ? `<button class="ghost" data-hunt="${esc(item.id)}">Hunt — sold out?</button>` : '');
+  const chev = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 4 10 8 6 12"></polyline></svg>';
+
   return `
     <article class="card">
       <div class="head">
@@ -55,17 +78,19 @@ function cardHTML(item) {
         <div class="head-text">
           <h2>${esc(c.title)}</h2>
           <span class="variant">🔒 ${esc(c.variantLocked)}</span>
+          <div class="simple-line">${priceChip}${statusChip}</div>
         </div>
       </div>
-      <p class="why">${esc(c.why)}</p>
-      <div class="status ${status}">${esc(c.statusLabel)}</div>
-      <div class="rows">${rows || '<div class="row"><span class="k">No snapshot yet</span><span class="v">tap Verify</span></div>'}</div>
-      <div class="actions">
-        ${reorder}
-        <button class="ghost" data-verify="${esc(item.id)}">Verify live (ask Claude)</button>
-        <button class="ghost" data-hunt="${esc(item.id)}">Hunt — sold out?</button>
-      </div>
-      ${alts ? `<div class="alts"><strong>Other vendors:</strong>${alts}</div>` : ''}
+      <div class="actions">${reorder}${huntInline}</div>
+      <details class="more">
+        <summary>${chev}<span class="lbl-closed">Show details</span><span class="lbl-open">Hide details</span></summary>
+        <div class="more-body">
+          ${why}
+          <div class="rows">${detailRows}</div>
+          ${altBlock}
+          <div class="actions detail-actions">${detailActions}</div>
+        </div>
+      </details>
     </article>`;
 }
 

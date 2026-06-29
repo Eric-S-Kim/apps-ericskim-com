@@ -56,11 +56,22 @@ body {
   margin: 0 0 2px; color: var(--ink);
 }
 .variant {
-  display: inline-block; margin: 6px 0 10px;
+  display: inline-block; margin: 6px 0 8px;
   font-size: 13px; font-weight: 600; color: var(--green-deep);
   background: #e9efe5; border: 1px solid #cdddc7; border-radius: 999px; padding: 3px 11px;
 }
-.why { color: var(--muted); font-size: 14px; font-style: italic; margin: 0 0 14px; }
+/* Simple view: price + status chip, glanceable, no asOf clutter. */
+.simple-line { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.price-short { font-weight: 700; font-size: 15px; color: var(--ink); }
+.chip {
+  font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted); background: #f3efe3;
+}
+.chip.in_stock_snapshot { color: var(--green); background: #e9efe5; border-color: #cdddc7; }
+.chip.snapshot { color: var(--green-deep); background: #eef1e7; border-color: #d8e0cd; }
+.chip.sold_out { color: var(--sold); background: #f6e9e6; border-color: #e3c9c2; }
+.chip.unresolved, .chip.unknown { color: var(--gold); background: #fbf4e2; border-color: #ecd9aa; }
+.why { color: var(--muted); font-size: 14px; font-style: italic; margin: 0 0 12px; }
 
 .status { font-size: 13.5px; font-weight: 600; margin: 2px 0 12px; }
 .status.in_stock_snapshot { color: var(--green); }
@@ -72,7 +83,21 @@ body {
 .row .k { color: var(--muted); }
 .row .v { text-align: right; }
 .asof { color: var(--muted); font-size: 12px; }
-.breakdown { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+/* MB3-style "Show details" disclosure — native <details>, rotating chevron, no toggle JS. */
+details.more { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; }
+details.more summary {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none;
+  color: var(--green-deep); font-weight: 600; font-size: 13px;
+}
+details.more summary::-webkit-details-marker { display: none; }
+details.more summary svg { transition: transform .15s ease; }
+details.more[open] summary svg { transform: rotate(90deg); }
+details.more summary .lbl-open { display: none; }
+details.more[open] summary .lbl-closed { display: none; }
+details.more[open] summary .lbl-open { display: inline; }
+.more-body { margin-top: 10px; }
+.detail-actions { margin-top: 12px; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 button, .btn {

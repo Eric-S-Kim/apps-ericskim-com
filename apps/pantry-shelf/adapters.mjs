@@ -75,10 +75,10 @@ export function buildConfidenceCard(item, vendor) {
     vendorName: vendor ? vendor.name : null,
     // price / seller / eta are SNAPSHOTS — each carries asOf, none is presented as live truth.
     priceText: snap ? `${snap.currency} ${Number(snap.landed).toFixed(2)} landed (as of ${snap.asOf})` : null,
-    priceBreakdown: snap && snap.breakdown ? snap.breakdown : null,
+    priceShort: snap ? `${snap.currency} ${Number(snap.landed).toFixed(2)}` : null,   // Simple view: price, no asOf
     sellerText: snap && snap.seller ? `${snap.seller} (as of ${snap.asOf})` : null,
-    etaText: snap && snap.eta ? `${snap.eta} (typical — confirm at checkout)` : null,
     statusLabel: snapshotStatusLabel(status, snap),
+    statusShort: snapshotStatusShort(status),                                          // Simple view: terse chip word
     teleportUrl,
     teleportLabel: teleportLabel(vendor),
     verifyPrompt: buildVerifyPrompt(item, vendor),  // hand-off to the engine (Claude)
@@ -93,6 +93,17 @@ export function snapshotStatusLabel(status, snap) {
     case 'sold_out':          return `Sold out${asOf}`;
     case 'unresolved':        return `Not yet verified — tap Verify`;
     default:                  return `Unknown — tap Verify`;
+  }
+}
+
+// Terse, glanceable status word for the Simple-view chip (no asOf, no instruction tail).
+export function snapshotStatusShort(status) {
+  switch (status) {
+    case 'in_stock_snapshot': return 'In stock';
+    case 'snapshot':          return 'Last bought';
+    case 'sold_out':          return 'Sold out';
+    case 'unresolved':        return 'Unverified';
+    default:                  return 'Unverified';
   }
 }
 
