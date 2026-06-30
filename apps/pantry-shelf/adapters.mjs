@@ -124,3 +124,27 @@ export function buildVerifyPrompt(item, vendor) {
     `), shipping to Vancouver BC, at ${where}. If it's sold out there, run the reputable-source ` +
     `hunt across stores that ship to Canada and report the cheapest in-stock authorized option.`;
 }
+
+// Group items into collapsible UI sections. FIRST-APPEARANCE order: the order a
+// group first shows up in the items array controls its section order (so reordering
+// items reorders sections). Within a group, items keep their array order. Falls back
+// to `category` then 'Other' when an item has no explicit `group`.
+export function groupItems(items) {
+  const order = [];
+  const buckets = new Map();
+  for (const it of (items || [])) {
+    const g = (it && (it.group || it.category)) || 'Other';
+    if (!buckets.has(g)) { buckets.set(g, []); order.push(g); }
+    buckets.get(g).push(it);
+  }
+  return order.map((g) => ({ group: g, emoji: groupEmoji(g), items: buckets.get(g) }));
+}
+
+export function groupEmoji(group) {
+  return ({
+    'Bath & Body': '🛁',
+    'Wellness': '💊',
+    'Kitchen': '🍴',
+    'Home & Cleaning': '🧹',
+  })[group] || '📦';
+}

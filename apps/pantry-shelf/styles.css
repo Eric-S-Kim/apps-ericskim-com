@@ -99,6 +99,27 @@ details.more[open] summary .lbl-open { display: inline; }
 .more-body { margin-top: 10px; }
 .detail-actions { margin-top: 12px; }
 
+/* Collapsible CATEGORY sections — calm "open to headers, tap to expand" layout.
+   Native <details>, collapsed by default; same chevron idiom as the per-card disclosure. */
+details.group { margin: 16px 0 0; }
+details.group:first-of-type { margin-top: 8px; }
+details.group > summary {
+  display: flex; align-items: center; gap: 11px; cursor: pointer; list-style: none;
+  padding: 14px 16px; background: var(--card); border: 1px solid var(--line);
+  border-radius: 13px; box-shadow: 0 1px 0 rgba(31,61,46,.04), 0 8px 20px -18px rgba(31,61,46,.5);
+}
+details.group > summary::-webkit-details-marker { display: none; }
+details.group[open] > summary { border-radius: 13px 13px 0 0; }
+.g-emoji { font-size: 19px; line-height: 1; }
+.g-name { font-family: Lustria, Georgia, serif; font-size: 18px; color: var(--green-deep); }
+.g-count { margin-left: auto; color: var(--muted); font-size: 13px; font-weight: 600; }
+.g-chev { color: var(--muted); display: inline-flex; transition: transform .15s ease; }
+details.group[open] .g-chev { transform: rotate(90deg); }
+/* Cards sit directly under their header when expanded — lighter so it's not card-in-card. */
+.group-body { border: 1px solid var(--line); border-top: none; border-radius: 0 0 13px 13px;
+  background: #fcfaf3; padding: 2px 14px 12px; }
+.group-body .card { box-shadow: none; margin: 12px 0; }
+
 .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 button, .btn {
   font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;

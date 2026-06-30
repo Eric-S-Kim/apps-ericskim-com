@@ -2,7 +2,7 @@
 // the honest confidence card + the hand-off-to-Claude buttons. All real logic lives
 // in adapters.mjs (shared with the tests); this file is just rendering + events.
 
-import { buildConfidenceCard, pickVendor, buildVerifyPrompt } from './adapters.mjs';
+import { buildConfidenceCard, pickVendor, buildVerifyPrompt, groupItems } from './adapters.mjs';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -94,6 +94,23 @@ function cardHTML(item) {
     </article>`;
 }
 
+// One collapsible category section, collapsed by default — the calm "open to a few
+// headers, tap the one you want" layout. Same native <details> disclosure as the cards.
+function groupSectionHTML(g) {
+  const chev = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 4 10 8 6 12"></polyline></svg>';
+  const n = g.items.length;
+  return `
+    <details class="group">
+      <summary>
+        <span class="g-emoji">${esc(g.emoji)}</span>
+        <span class="g-name">${esc(g.group)}</span>
+        <span class="g-count">${n} item${n === 1 ? '' : 's'}</span>
+        <span class="g-chev">${chev}</span>
+      </summary>
+      <div class="group-body">${g.items.map(cardHTML).join('')}</div>
+    </details>`;
+}
+
 // --- Shelf data: lives ONLY in this device's localStorage (never on the public server). ---
 // The hosted app ships with a generic demo shelf.json. Your real shelf arrives via a private
 // one-tap "#data=" link that imports into localStorage on YOUR phone, never transmitted back.
@@ -144,7 +161,7 @@ async function getShelf() {
 async function main() {
   const { shelf, source } = await getShelf();
   const items = shelf.items || [];
-  document.getElementById('shelf').innerHTML = items.map(cardHTML).join('');
+  document.getElementById('shelf').innerHTML = groupItems(items).map(groupSectionHTML).join('');
   document.getElementById('count').textContent =
     `${items.length} item${items.length === 1 ? '' : 's'} · for ${(shelf.household || []).join(' & ')}`;
   const banner = document.getElementById('banner');
