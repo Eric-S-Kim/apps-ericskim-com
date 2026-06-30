@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-fr-theme="green" data-fr-mode="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eric Ryan &amp; Eric Kim — Meeting</title>
+<link href="https://fonts.googleapis.com/css2?family=Lustria&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-900:#002F10; --green-700:#006823; --green-500:#009B34;
+    --lime:#D8FC7B; --sage:#BFD3C4; --camel:#B59764; --cream:#E9E2D1;
+    --sand:#D6CDB6; --ink:#131313; --gray:#F6F6F6; --white:#fff;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%; text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--gray); color:var(--ink);
+    font-family:"Hanken Grotesk", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    line-height:1.5; font-size:16px;
+  }
+  .wrap{max-width:840px; margin:0 auto; background:var(--white);
+        box-shadow:0 2px 24px rgba(0,47,16,.08);}
+  h1,h2,h3,.serif{font-family:"Lustria", Georgia, serif;}
+  .eyebrow{font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+           color:var(--green-700); font-weight:600;}
+  .hl{color:var(--green-500);}
+
+  /* Header */
+  header{background:var(--green-900); color:var(--cream); padding:30px 36px 26px;}
+  header .eyebrow{color:var(--lime);}
+  header h1{margin:.25em 0 0; font-size:30px; color:var(--white); line-height:1.15;}
+  header h1 .sub{display:block; font-size:18px; color:var(--sage); font-weight:400; margin-top:8px;}
+
+  /* Stat band */
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+         background:var(--sage); border-bottom:1px solid var(--sage);}
+  .stat{background:var(--cream); padding:18px 20px; text-align:center;}
+  .stat .n{font-family:"Lustria",serif; font-size:30px; color:var(--green-900); line-height:1;}
+  .stat .l{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); margin-top:6px;}
+  .stat .s{font-size:12.5px; color:#5a6b5e; margin-top:3px;}
+
+  main{padding:26px 36px 30px;}
+  section{margin:0 0 22px;}
+  h2{font-size:19px; color:var(--green-900); margin:0 0 4px;
+     border-bottom:2px solid var(--sand); padding-bottom:6px;}
+
+  /* Bottleneck callout */
+  .callout{background:var(--green-900); color:var(--cream); border-radius:12px;
+           padding:20px 24px; display:flex; gap:22px; align-items:center; margin:6px 0 2px;}
+  .callout .big{font-family:"Lustria",serif; font-size:40px; color:var(--lime); line-height:1; white-space:nowrap;}
+  .callout .unit{font-size:14px; color:var(--sage);}
+  .callout p{margin:0; font-size:14.5px;}
+  .callout strong{color:var(--white);}
+
+  ul{margin:8px 0 0; padding-left:0; list-style:none;}
+  li{padding:5px 0 5px 22px; position:relative; font-size:14.5px;}
+  li::before{content:""; position:absolute; left:2px; top:12px; width:8px; height:8px;
+             background:var(--green-500); border-radius:50%;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:8px 28px;}
+  .mini{display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:var(--sand);
+        border:1px solid var(--sand); border-radius:8px; overflow:hidden;}
+  .mini div{background:var(--white); padding:11px 6px; text-align:center;}
+  .mini .n{font-family:"Lustria",serif; font-size:20px; color:var(--green-900);}
+  .mini .l{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--green-700); margin-top:3px;}
+
+  .tag{display:inline-block; background:var(--sage); color:var(--green-900);
+       border-radius:20px; padding:3px 11px; font-size:12.5px; margin:3px 4px 0 0;}
+  .note{font-size:13.5px; color:#4f5d52; margin-top:8px;}
+  .q{color:var(--camel); font-weight:600;}
+
+  /* Committed 60 highlight */
+  .invite{background:var(--cream); border-left:4px solid var(--green-500);
+          border-radius:0 10px 10px 0; padding:14px 20px; margin-top:6px;}
+  .invite p{margin:0; font-size:14.5px;}
+  footer{padding:16px 36px 26px; color:#7c8a80; font-size:12px;
+         border-top:1px solid var(--sand);}
+
+  @media (max-width:620px){
+    header,main{padding-left:20px; padding-right:20px;}
+    .stats{grid-template-columns:1fr;} .grid2{grid-template-columns:1fr;}
+    .mini{grid-template-columns:repeat(2,1fr);} .callout{flex-direction:column; text-align:center; gap:10px;}
+    header h1{font-size:24px;} header h1 .sub{font-size:16px;}
+  }
+  @media print{
+    body{background:#fff; font-size:12.5px;} .wrap{box-shadow:none; max-width:none;}
+    header{padding:20px 24px;} main{padding:18px 24px;} section{margin-bottom:14px;}
+    .callout,section{break-inside:avoid;}
+    @page{margin:12mm;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Altea Active · Personal Training</div>
+    <h1>Eric Ryan &amp; Eric Kim Meeting<span class="sub">(Discuss Training Goals + Onboarding)</span></h1>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="n">33.5</div><div class="l">WHOOP Age</div><div class="s">5.6 yrs younger (chrono 39)</div></div>
+    <div class="stat"><div class="n">0.3×</div><div class="l">Pace of Aging</div><div class="s">aging at ⅓ normal speed</div></div>
+    <div class="stat"><div class="n">~85%</div><div class="l">Days Trained</div><div class="s">52 of 61 · ~131 min/day</div></div>
+  </div>
+
+  <main>
+    <section>
+      <h2>① My one goal</h2>
+      <p style="margin:6px 0 0; font-size:14.5px;">Run a single <strong>body-recomposition</strong> program that builds visible muscle &amp; lowers body-fat (the “beach body”) <em>while</em> driving down my WHOOP Age. Use WHOOP Age as the objective scoreboard; aesthetics keep me motivated.</p>
+    </section>
+
+    <section>
+      <h2>② My #1 bottleneck — confirmed in my WHOOP data</h2>
+      <div class="callout">
+        <div><span class="big">40</span> <span class="unit">ml/kg/min</span></div>
+        <p><strong>VO₂ Max is the single thing holding me back.</strong> Of WHOOP’s 9 longevity metrics, it’s the <strong>only one adding to my age</strong> — everything else is green. I do almost <strong>no high-intensity cardio</strong> (~19 min/week in hard zones). This is where I most want your help.</p>
+      </div>
+      <p class="note">Everything else is a strength: easy-cardio volume, strength activity, sleep consistency, resting HR — all subtracting years.</p>
+    </section>
+
+    <section>
+      <h2>③ Where I’m starting — my real last 2 months</h2>
+      <div class="grid2">
+        <ul>
+          <li><strong>Relatively consistent:</strong> trained ~85% of days in the last 2 months; I don’t need motivation, but I need <em>structure</em>.</li>
+          <li><strong>Balanced mix:</strong> hot yoga, strength, dance, walking/cycling.</li>
+          <li><strong>Hot Yoga:</strong> 3–4×/week</li>
+        </ul>
+        <ul>
+          <li><strong>Strength:</strong> ~3×/week (chest/tri, back/bi, shoulders, legs) — under-structured &amp; new to progressive lifting.</li>
+          <li><strong>Dance:</strong> 3×/week (5Rhythms, Ballet BC)</li>
+          <li><strong>The gaps:</strong> no real interval/VO₂max work; lifting not progressively programmed.</li>
+        </ul>
+      </div>
+      <p style="margin:10px 0 4px; font-size:13px;"><span class="eyebrow">Modality mix · last 2 months (total sessions)</span></p>
+      <span class="tag">Hot yoga ×29</span><span class="tag">Strength ×23</span><span class="tag">Dance (5Rhythms, Ballet BC) ×22</span><span class="tag">Walking / Cycling ×22</span>
+    </section>
+
+    <section>
+      <h2>④ My body numbers according to WHOOP</h2>
+      <div class="mini">
+        <div><div class="n">39</div><div class="l">Age</div></div>
+        <div><div class="n">7.2h</div><div class="l">Sleep</div></div>
+        <div><div class="n">65%</div><div class="l">Recovery</div></div>
+        <div><div class="n">58</div><div class="l">Rest HR</div></div>
+        <div><div class="n">47</div><div class="l">HRV (ms)</div></div>
+      </div>
+      <p class="note">Evolt baseline body scan done at intake — body-fat % &amp; lean mass available to ground the plan.</p>
+    </section>
+
+    <section>
+      <h2>⑤ My diet (so you can assess nutrition)</h2>
+      <p style="margin:6px 0 0; font-size:14.5px;"><strong>~14 meals a week are on the healthier side</strong>, chef-cooked (Fresh in Your Fridge): lean proteins — <em>pork, turkey, chicken, salmon</em> — with lots of vegetables &amp; whole grains (brown rice, quinoa, wild rice). Healthy-but-sweet snacks. <strong>~6–8 takeout / eating out per week (try to stay healthy here too).</strong></p>
+    </section>
+
+    <section>
+      <h2>⑥ Committed 60 — I’d love to join</h2>
+      <div class="invite">
+        <p>I joined just yesterday and saw the <strong>Committed 60</strong> series (≈40 classes in 60 days). <strong>If spots are still available, I’d love to join</strong> — it looks like a great way to get to know the gym, the classes, and the people here. Can you help me get signed up?</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>Built from my own WHOOP export + workout log · Vancouver · June 2026</footer>
+</div>
+</body>
+</html>
