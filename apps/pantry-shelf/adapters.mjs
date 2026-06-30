@@ -152,12 +152,14 @@ export function itemGroup(it) {
 export function groupItems(items) {
   const order = [];
   const buckets = new Map();
+  const emojis = new Map(); // a group's icon may come from the DATA (keeps niche labels out of public code)
   for (const it of (items || [])) {
     const g = itemGroup(it);
     if (!buckets.has(g)) { buckets.set(g, []); order.push(g); }
     buckets.get(g).push(it);
+    if (it && it.groupEmoji && !emojis.has(g)) emojis.set(g, it.groupEmoji);
   }
-  return order.map((g) => ({ group: g, emoji: groupEmoji(g), items: buckets.get(g) }));
+  return order.map((g) => ({ group: g, emoji: emojis.get(g) || groupEmoji(g), items: buckets.get(g) }));
 }
 
 export function groupEmoji(group) {

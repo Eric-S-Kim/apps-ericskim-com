@@ -1,7 +1,7 @@
 // Network-first service worker: ALWAYS serve fresh code/data when online, so logic
 // updates are never stale; fall back to cache only when offline. (A cache-first SW
 // previously served a stale adapters.mjs and hid the reorder buttons.)
-const CACHE = 'pantry-shelf-v7';
+const CACHE = 'pantry-shelf-v8';
 const CORE = ['./', './index.html', './styles.css', './app.mjs', './adapters.mjs', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (e) => {
