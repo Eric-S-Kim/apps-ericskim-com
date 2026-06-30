@@ -125,15 +125,35 @@ export function buildVerifyPrompt(item, vendor) {
     `hunt across stores that ship to Canada and report the cheapest in-stock authorized option.`;
 }
 
+// Map the older fine-grained `category` values onto the 4 display groups, so a shelf
+// saved BEFORE the `group` field existed still collapses into the same 4 clean sections
+// (instead of one section per raw category). Explicit `group` always wins over this.
+const CATEGORY_TO_GROUP = {
+  'Facial sunscreen': 'Bath & Body',
+  'Cleanser': 'Bath & Body',
+  'Grooming': 'Bath & Body',
+  'Supplement': 'Wellness',
+  'Sparkling water': 'Kitchen',
+  'Home / cleaning': 'Home & Cleaning',
+};
+
+// The single source of truth for which group an item belongs to:
+// explicit `group` > mapped `category` > raw `category` > 'Other'.
+export function itemGroup(it) {
+  if (!it) return 'Other';
+  if (it.group) return it.group;
+  if (it.category && CATEGORY_TO_GROUP[it.category]) return CATEGORY_TO_GROUP[it.category];
+  return it.category || 'Other';
+}
+
 // Group items into collapsible UI sections. FIRST-APPEARANCE order: the order a
 // group first shows up in the items array controls its section order (so reordering
-// items reorders sections). Within a group, items keep their array order. Falls back
-// to `category` then 'Other' when an item has no explicit `group`.
+// items reorders sections). Within a group, items keep their array order.
 export function groupItems(items) {
   const order = [];
   const buckets = new Map();
   for (const it of (items || [])) {
-    const g = (it && (it.group || it.category)) || 'Other';
+    const g = itemGroup(it);
     if (!buckets.has(g)) { buckets.set(g, []); order.push(g); }
     buckets.get(g).push(it);
   }
