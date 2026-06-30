@@ -77,7 +77,7 @@ function cardHTML(item) {
         ${img}
         <div class="head-text">
           <h2>${esc(c.title)}</h2>
-          <span class="variant">🔒 ${esc(c.variantLocked)}</span>
+          <span class="variant">${esc(c.variantLocked)}</span>
           <div class="simple-line">${priceChip}${statusChip}</div>
         </div>
       </div>
