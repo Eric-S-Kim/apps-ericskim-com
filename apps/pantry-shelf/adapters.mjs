@@ -35,6 +35,25 @@ export function buildCartUrl(vendor) {
   }
 }
 
+export function isShelfPayload(data) {
+  return Boolean(data && Array.isArray(data.items));
+}
+
+export function isTrustedShelfFetchUrl(url) {
+  if (typeof url !== 'string') return false;
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split('/').filter(Boolean);
+    return u.protocol === 'https:' &&
+      u.hostname === 'gist.githubusercontent.com' &&
+      parts.length >= 3 &&
+      /^[0-9a-f]+$/i.test(parts[1]) &&
+      parts[2] === 'raw';
+  } catch {
+    return false;
+  }
+}
+
 // variant-lock guard. True only if a live offer label matches the locked variant.
 // This is the guard against the exact failure that started the project: buying the
 // Tinted (or wrong size / wrong SPF) when you wanted Untinted 1.7oz.

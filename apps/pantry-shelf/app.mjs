@@ -2,7 +2,14 @@
 // the honest confidence card + the hand-off-to-Claude buttons. All real logic lives
 // in adapters.mjs (shared with the tests); this file is just rendering + events.
 
-import { buildConfidenceCard, pickVendor, buildVerifyPrompt, groupItems } from './adapters.mjs';
+import {
+  buildConfidenceCard,
+  pickVendor,
+  buildVerifyPrompt,
+  groupItems,
+  isShelfPayload,
+  isTrustedShelfFetchUrl,
+} from './adapters.mjs';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -113,13 +120,30 @@ function groupSectionHTML(g) {
 
 // --- Shelf data: lives ONLY in this device's localStorage (never on the public server). ---
 // The hosted app ships with a generic demo shelf.json. Your real shelf arrives via a private
-// one-tap "#data=" link that imports into localStorage on YOUR phone, never transmitted back.
+// one-tap "#data=" link or remembered "#fetch=" gist source. The source URL is stored only on
+// this device, so future pantry edits can sync without publishing private data into the app.
 const LS_KEY = 'pantry-shelf-data-v1';
+const LS_SOURCE_KEY = 'pantry-shelf-source-v1';
 
 function b64urlDecode(s) {
   s = s.replace(/-/g, '+').replace(/_/g, '/');
   while (s.length % 4) s += '=';
   return decodeURIComponent(escape(atob(s)));
+}
+
+function cacheBustedUrl(url) {
+  const u = new URL(url);
+  u.searchParams.set('_pantrySync', String(Date.now()));
+  return u.toString();
+}
+
+async function fetchShelfFromSource(url) {
+  if (!isTrustedShelfFetchUrl(url)) throw new Error('untrusted fetch url');
+  const res = await fetch(cacheBustedUrl(url), { cache: 'no-store' });
+  if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+  const data = await res.json();
+  if (!isShelfPayload(data)) throw new Error('not a shelf');
+  return data;
 }
 
 async function maybeImportFromHash() {
@@ -129,18 +153,17 @@ async function maybeImportFromHash() {
   if (!dataM && !fetchM) return;
   try {
     let data = null;
+    let sourceUrl = null;
     if (dataM) {
       data = JSON.parse(b64urlDecode(dataM[1]));
     } else {
-      const url = decodeURIComponent(fetchM[1]);
-      // Only allow fetching the transfer file from GitHub gist raw (no arbitrary SSRF target).
-      if (!/^https:\/\/gist\.githubusercontent\.com\//.test(url)) throw new Error('untrusted fetch url');
-      const res = await fetch(url, { cache: 'no-store' });
-      data = await res.json();
+      sourceUrl = decodeURIComponent(fetchM[1]);
+      data = await fetchShelfFromSource(sourceUrl);
     }
-    if (!data || !Array.isArray(data.items)) throw new Error('not a shelf');
+    if (!isShelfPayload(data)) throw new Error('not a shelf');
     if (confirm(`Load your shelf (${data.items.length} items) onto THIS device? It stays only here.`)) {
       localStorage.setItem(LS_KEY, JSON.stringify(data));
+      if (sourceUrl) localStorage.setItem(LS_SOURCE_KEY, sourceUrl);
     }
   } catch (e) {
     console.warn('Shelf import failed:', e);
@@ -150,6 +173,20 @@ async function maybeImportFromHash() {
 
 async function getShelf() {
   await maybeImportFromHash();
+  const sourceUrl = localStorage.getItem(LS_SOURCE_KEY);
+  if (sourceUrl) {
+    if (isTrustedShelfFetchUrl(sourceUrl)) {
+      try {
+        const shelf = await fetchShelfFromSource(sourceUrl);
+        localStorage.setItem(LS_KEY, JSON.stringify(shelf));
+        return { shelf, source: 'device' };
+      } catch (e) {
+        console.warn('Shelf sync failed; falling back to saved shelf:', e);
+      }
+    } else {
+      localStorage.removeItem(LS_SOURCE_KEY);
+    }
+  }
   const raw = localStorage.getItem(LS_KEY);
   if (raw) {
     try { return { shelf: JSON.parse(raw), source: 'device' }; } catch {}
