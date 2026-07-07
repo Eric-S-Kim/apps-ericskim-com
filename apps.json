@@ -1,9 +1,9 @@
 [
   {
     "slug": "chief-of-staff",
-    "name": "Chief of Staff",
-    "sub": "are my automations healthy?",
-    "icon": "icons/chief-of-staff-red-192.png",
+    "name": "Chief Of Staff",
+    "sub": "",
+    "icon": "apps/chief-of-staff/icon-any-192.png",
     "kind": "hosted",
     "url": "apps/chief-of-staff/",
     "labelColor": "#7a1212",
