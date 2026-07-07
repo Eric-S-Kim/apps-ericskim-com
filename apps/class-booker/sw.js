@@ -4,7 +4,10 @@ const CACHE = "class-booker-4d2852a1665a";
 const CORE = ["./","./icon-any-192.png","./icon-any-512.png","./icon-maskable-192.png","./icon-maskable-512.png","./index.html","./manifest.json","./README.md"];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {}).then(() => self.skipWaiting()));
+  // Fail the install if precache fails: the OLD worker (and its intact offline cache)
+  // stays in charge, and online users still get fresh code through its network-first
+  // fetch handler. A half-cached new worker would silently degrade offline.
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
