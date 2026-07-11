@@ -3,10 +3,10 @@
   "sanitized": true,
   "note": "Public sanitized view: job names, static descriptions, health, and freshness only. No paths/errors.",
   "monitor": {
-    "generated_at": "2026-07-11T07:00:41.085751-07:00",
-    "generated_at_ms": 1783778441085,
-    "harvest_evaluated_at": "2026-07-11T06:45:40.715854-07:00",
-    "harvest_evaluated_at_ms": 1783777540715,
+    "generated_at": "2026-07-11T08:00:39.760392-07:00",
+    "generated_at_ms": 1783782039760,
+    "harvest_evaluated_at": "2026-07-11T07:45:39.775056-07:00",
+    "harvest_evaluated_at_ms": 1783781139775,
     "monitor_status": "watching",
     "jobs_total": 31,
     "jobs_needs_attention": 0,
@@ -25,8 +25,8 @@
       "description": "The 15-minute heartbeat of your Chief of Staff. Every cycle it gathers each job's status, runs the monitors, and refreshes this dashboard.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-11T06:45:40.715854-07:00",
-      "expected_by": "2026-07-11T07:30:40.715854-07:00",
+      "last_ok_at": "2026-07-11T07:45:39.775056-07:00",
+      "expected_by": "2026-07-11T08:30:39.775056-07:00",
       "max_age_seconds": 2700,
       "lag_human": "15m ago",
       "entry_kind": "signal"
@@ -41,7 +41,7 @@
       "last_ok_at": "2026-07-10T22:30:22.034563-07:00",
       "expected_by": "2026-07-12T22:30:22.034563-07:00",
       "max_age_seconds": 172800,
-      "lag_human": "8h 30m ago",
+      "lag_human": "9h 30m ago",
       "entry_kind": "signal"
     },
     {
@@ -51,10 +51,10 @@
       "description": "Turns booking emails (yoga, appointments, reservations) into calendar events automatically. Mostly idle — it only acts when a new bookable email arrives.",
       "urgency": "urgent",
       "status": "idle",
-      "last_ok_at": "2026-07-11T07:00:02-07:00",
-      "expected_by": "2026-07-11T07:30:02-07:00",
+      "last_ok_at": "2026-07-11T08:00:02-07:00",
+      "expected_by": "2026-07-11T08:30:02-07:00",
       "max_age_seconds": 1800,
-      "lag_human": "39s ago",
+      "lag_human": "38s ago",
       "entry_kind": "prepared_work"
     },
     {
@@ -67,7 +67,7 @@
       "last_ok_at": "2026-07-06T12:37:11.549796-07:00",
       "expected_by": "2026-07-14T12:37:11.549796-07:00",
       "max_age_seconds": 691200,
-      "lag_human": "4d 18h ago",
+      "lag_human": "4d 19h ago",
       "entry_kind": "prepared_work"
     },
     {
@@ -80,7 +80,7 @@
       "last_ok_at": "2026-07-08T08:01:11.170302-07:00",
       "expected_by": "2026-07-16T08:01:11.170302-07:00",
       "max_age_seconds": 691200,
-      "lag_human": "2d 22h ago",
+      "lag_human": "2d 23h ago",
       "entry_kind": "signal"
     },
     {
@@ -93,7 +93,7 @@
       "last_ok_at": "2026-07-11T02:31:31-07:00",
       "expected_by": "2026-07-12T14:31:31-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "4h 29m ago",
+      "lag_human": "5h 29m ago",
       "entry_kind": "prepared_work"
     },
     {
@@ -106,7 +106,7 @@
       "last_ok_at": "2026-07-05T02:31:01.394781-07:00",
       "expected_by": "2026-07-13T02:31:01.394781-07:00",
       "max_age_seconds": 691200,
-      "lag_human": "6d 4h ago",
+      "lag_human": "6d 5h ago",
       "entry_kind": "prepared_work"
     },
     {
@@ -116,8 +116,8 @@
       "description": "Every 30 minutes, checks that your Google and Gmail logins are alive. The early-warning system for the auth failures that quietly break your pipelines.",
       "urgency": "urgent",
       "status": "healthy",
-      "last_ok_at": "2026-07-11T06:45:02-07:00",
-      "expected_by": "2026-07-11T10:45:02-07:00",
+      "last_ok_at": "2026-07-11T07:45:02-07:00",
+      "expected_by": "2026-07-11T11:45:02-07:00",
       "max_age_seconds": 14400,
       "lag_human": "15m ago",
       "entry_kind": "signal"
@@ -129,8 +129,8 @@
       "description": "Hourly check that the Chief of Staff's live code has no uncommitted changes (matches the committed git baseline). Catches accidental or unreviewed changes to the monitor itself.",
       "urgency": "urgent",
       "status": "healthy",
-      "last_ok_at": "2026-07-11T06:06:55.910202-07:00",
-      "expected_by": "2026-07-11T08:06:55.910202-07:00",
+      "last_ok_at": "2026-07-11T07:06:55.928702-07:00",
+      "expected_by": "2026-07-11T09:06:55.928702-07:00",
       "max_age_seconds": 7200,
       "lag_human": "53m ago",
       "entry_kind": "signal"
@@ -142,8 +142,8 @@
       "description": "An independent, out-of-band guard that asks 'is the Chief of Staff alive?' every hour. If the heartbeat goes stale it emails you — built so it can't die the same way the monitor would.",
       "urgency": "urgent",
       "status": "healthy",
-      "last_ok_at": "2026-07-11T06:30:49-07:00",
-      "expected_by": "2026-07-11T09:30:49-07:00",
+      "last_ok_at": "2026-07-11T07:30:49-07:00",
+      "expected_by": "2026-07-11T10:30:49-07:00",
       "max_age_seconds": 10800,
       "lag_human": "29m ago",
       "entry_kind": "signal"
@@ -155,7 +155,7 @@
       "description": "A read-only health probe of your Codex tool — context bloat, database growth, stale workspaces. Watching and recording for now; it doesn't alert yet.",
       "urgency": "routine",
       "status": "watching",
-      "last_ok_at": "2026-07-11T07:00:37-07:00",
+      "last_ok_at": "2026-07-11T08:00:36-07:00",
       "expected_by": null,
       "max_age_seconds": null,
       "lag_human": "4s ago",
@@ -168,10 +168,10 @@
       "description": "A read-only health probe of Claude Code itself — history, connectors, hooks. Watching and recording for now; it doesn't alert yet.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-11T07:00:41-07:00",
+      "last_ok_at": "2026-07-11T08:00:39-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "0s ago",
+      "lag_human": "1s ago",
       "entry_kind": "signal"
     },
     {
@@ -181,7 +181,7 @@
       "description": "Reads each tick for jobs that need attention and sends one de-duplicated alert. It only notifies — it never tries to fix things itself.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-11T06:45:40-07:00",
+      "last_ok_at": "2026-07-11T07:45:39-07:00",
       "expected_by": null,
       "max_age_seconds": null,
       "lag_human": "15m ago",
@@ -197,7 +197,7 @@
       "last_ok_at": "2026-07-10T08:30:19.463121-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "22h 30m ago",
+      "lag_human": "23h 30m ago",
       "entry_kind": "watch"
     },
     {
@@ -207,10 +207,10 @@
       "description": "Each morning it re-checks your open follow-ups to confirm they actually resolved, then closes or flags them. It also tracks the self-healing engine's health over a rolling week.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-10T07:15:02-07:00",
+      "last_ok_at": "2026-07-11T07:15:02-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "23h 45m ago",
+      "lag_human": "45m ago",
       "entry_kind": "signal"
     },
     {
@@ -220,10 +220,10 @@
       "description": "A weekly audit of the email-to-calendar pipeline. For 13 known booking senders it checks how many emails should have become events but silently didn't, and emails you if the miss rate climbs.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-04T08:00:13-07:00",
+      "last_ok_at": "2026-07-11T08:00:14-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "6d 23h ago",
+      "lag_human": "26s ago",
       "entry_kind": "signal"
     },
     {
@@ -236,7 +236,7 @@
       "last_ok_at": "2026-07-06T11:58:49.285501-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "4d 19h ago",
+      "lag_human": "4d 20h ago",
       "entry_kind": "signal"
     },
     {
@@ -249,7 +249,7 @@
       "last_ok_at": "2026-07-10T08:30:01-07:00",
       "expected_by": "2026-07-11T10:30:01-07:00",
       "max_age_seconds": 93600,
-      "lag_human": "22h 30m ago",
+      "lag_human": "23h 30m ago",
       "entry_kind": "watch"
     },
     {
@@ -259,8 +259,8 @@
       "description": "Hourly mirror of your irreplaceable files to the D: drive. An always-current local copy.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-11T06:15:53.420049-07:00",
-      "expected_by": "2026-07-11T09:15:53.420049-07:00",
+      "last_ok_at": "2026-07-11T07:15:54.014758-07:00",
+      "expected_by": "2026-07-11T10:15:54.014758-07:00",
       "max_age_seconds": 10800,
       "lag_human": "44m ago",
       "entry_kind": "signal"
@@ -275,7 +275,7 @@
       "last_ok_at": "2026-07-11T02:30:24.370735-07:00",
       "expected_by": "2026-07-12T08:30:24.370735-07:00",
       "max_age_seconds": 108000,
-      "lag_human": "4h 30m ago",
+      "lag_human": "5h 30m ago",
       "entry_kind": "signal"
     },
     {
@@ -288,7 +288,7 @@
       "last_ok_at": "2026-06-08T07:51:22-07:00",
       "expected_by": "2026-06-08T15:51:22-07:00",
       "max_age_seconds": 28800,
-      "lag_human": "32d 23h ago",
+      "lag_human": "33d ago",
       "entry_kind": "signal"
     },
     {
@@ -298,8 +298,8 @@
       "description": "Hourly commit-and-push of your workstation configuration to a private GitHub repo. Keeps your machine's recovery setup versioned and safe.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-11T06:20:08.639186-07:00",
-      "expected_by": "2026-07-11T09:20:08.639186-07:00",
+      "last_ok_at": "2026-07-11T07:20:06.821186-07:00",
+      "expected_by": "2026-07-11T10:20:06.821186-07:00",
       "max_age_seconds": 10800,
       "lag_human": "40m ago",
       "entry_kind": "signal"
@@ -314,7 +314,7 @@
       "last_ok_at": "2026-07-11T03:30:01.606517-07:00",
       "expected_by": "2026-07-12T15:30:01.606517-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "3h 30m ago",
+      "lag_human": "4h 30m ago",
       "entry_kind": "signal"
     },
     {
@@ -324,8 +324,8 @@
       "description": "Hourly backup of the Chief of Staff's own code to a private remote. The safety net for the monitor itself (recently repaired).",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-11T06:25:04.997818-07:00",
-      "expected_by": "2026-07-11T09:25:04.997818-07:00",
+      "last_ok_at": "2026-07-11T07:25:04.962498-07:00",
+      "expected_by": "2026-07-11T10:25:04.962498-07:00",
       "max_age_seconds": 10800,
       "lag_human": "35m ago",
       "entry_kind": "signal"
@@ -337,10 +337,10 @@
       "description": "Hourly publisher that copies the sanitized health board to Eric's public apps site so his phone can read it. This tile watches the published copy itself — if the publisher dies, the phone board goes stale and this tile names the culprit.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-11T06:00:40.711341-07:00",
-      "expected_by": "2026-07-11T09:00:40.711341-07:00",
+      "last_ok_at": "2026-07-11T07:00:41.085751-07:00",
+      "expected_by": "2026-07-11T10:00:41.085751-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "1h ago",
+      "lag_human": "59m ago",
       "entry_kind": "signal"
     },
     {
@@ -350,10 +350,10 @@
       "description": "Daily read-only canary for the on-demand produce-cart skill. Verifies the shared seasonal-produce calendar loads, covers the current season, and its ranking logic still picks fresh items — no cart, browser, email, or LLM involved.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-10T07:15:01-07:00",
-      "expected_by": "2026-07-11T19:15:01-07:00",
+      "last_ok_at": "2026-07-11T07:15:02-07:00",
+      "expected_by": "2026-07-12T19:15:02-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "23h 45m ago",
+      "lag_human": "45m ago",
       "entry_kind": "signal"
     },
     {
@@ -363,10 +363,10 @@
       "description": "Daily read-only canary for the Cupcake Tracker PWA (Railway). Plain GET of the app shell plus /api/health — requires 200, the app's title marker, and a healthy backend; never logs in or writes tracker state.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-10T07:15:02-07:00",
-      "expected_by": "2026-07-11T19:15:02-07:00",
+      "last_ok_at": "2026-07-11T07:15:02-07:00",
+      "expected_by": "2026-07-12T19:15:02-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "23h 45m ago",
+      "lag_human": "45m ago",
       "entry_kind": "signal"
     },
     {
@@ -376,10 +376,10 @@
       "description": "Daily read-only canary for the chore-tracker app 'Nest Maintenance' (Railway). Plain GET of the app shell plus /api/health — requires 200, the app's title marker, and a healthy backend; never creates, completes, or edits chores.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-10T07:15:02-07:00",
-      "expected_by": "2026-07-11T19:15:02-07:00",
+      "last_ok_at": "2026-07-11T07:15:03-07:00",
+      "expected_by": "2026-07-12T19:15:03-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "23h 45m ago",
+      "lag_human": "45m ago",
       "entry_kind": "signal"
     },
     {
@@ -389,10 +389,10 @@
       "description": "Daily read-only canary for the Pantry Shelf PWA (GitHub Pages private tile). Plain GET requiring 200 plus the app's title marker, proving the real app shell rendered rather than a generic host page; never touches inventory data.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-10T07:15:02-07:00",
-      "expected_by": "2026-07-11T19:15:02-07:00",
+      "last_ok_at": "2026-07-11T07:15:03-07:00",
+      "expected_by": "2026-07-12T19:15:03-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "23h 45m ago",
+      "lag_human": "45m ago",
       "entry_kind": "signal"
     },
     {
@@ -402,10 +402,10 @@
       "description": "Daily read-only canary for the private browser-debate delivery path (debate-share on Railway). GET /health (no auth) plus GET /auth-check with the local User-scope DEBATE_SHARE_TOKEN — exercises the exact upload auth logic without creating a slug, writing /data, or exposing any token material (presence booleans + HTTP verdicts only). Catches a broken service, missing local token, or token mismatch BEFORE the next debate finale fails at publish time.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-10T07:15:03-07:00",
-      "expected_by": "2026-07-11T19:15:03-07:00",
+      "last_ok_at": "2026-07-11T07:15:04-07:00",
+      "expected_by": "2026-07-12T19:15:04-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "23h 45m ago",
+      "lag_human": "45m ago",
       "entry_kind": "signal"
     },
     {
@@ -415,10 +415,10 @@
       "description": "Daily read-only canary for the Debate Runner v15 watcher itself (email -> spawned-agent browser debates, C:\\code\\debate-runner). Checks the DebateRunner-Watcher scheduled task is Ready/Running, watch.log advanced within 15 min (with an in-flight-debate exemption via browser.lock — one tick blocks 1-2h for a whole debate by design), and surfaces an active pause (tripwire / DEBATE STOP kill switch) as watching. This is the dead-watcher detector: the watcher's own failure alerts ride the same gws auth it needs alive, so when IT dies, only this canary notices.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-10T07:15:01-07:00",
-      "expected_by": "2026-07-11T19:15:01-07:00",
+      "last_ok_at": "2026-07-11T07:15:01-07:00",
+      "expected_by": "2026-07-12T19:15:01-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "23h 45m ago",
+      "lag_human": "45m ago",
       "entry_kind": "signal"
     }
   ]
