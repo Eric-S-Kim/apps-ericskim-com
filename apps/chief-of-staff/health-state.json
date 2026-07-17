@@ -3,10 +3,10 @@
   "sanitized": true,
   "note": "Public sanitized view: job names, static descriptions, health, and freshness only. No paths/errors.",
   "monitor": {
-    "generated_at": "2026-07-17T06:00:53.427867-07:00",
-    "generated_at_ms": 1784293253427,
-    "harvest_evaluated_at": "2026-07-17T05:45:52.377759-07:00",
-    "harvest_evaluated_at_ms": 1784292352377,
+    "generated_at": "2026-07-17T06:15:52.136696-07:00",
+    "generated_at_ms": 1784294152136,
+    "harvest_evaluated_at": "2026-07-17T06:00:53.767617-07:00",
+    "harvest_evaluated_at_ms": 1784293253767,
     "monitor_status": "watching",
     "jobs_total": 46,
     "jobs_needs_attention": 0,
@@ -25,10 +25,10 @@
       "description": "The 15-minute heartbeat of your Chief of Staff. Every cycle it gathers each job's status, runs the monitors, and refreshes this dashboard.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-17T05:45:52.377759-07:00",
-      "expected_by": "2026-07-17T06:30:52.377759-07:00",
+      "last_ok_at": "2026-07-17T06:00:53.767617-07:00",
+      "expected_by": "2026-07-17T06:45:53.767617-07:00",
       "max_age_seconds": 2700,
-      "lag_human": "15m ago",
+      "lag_human": "14m ago",
       "entry_kind": "signal"
     },
     {
@@ -41,7 +41,7 @@
       "last_ok_at": "2026-07-16T22:30:27.646585-07:00",
       "expected_by": "2026-07-18T22:30:27.646585-07:00",
       "max_age_seconds": 172800,
-      "lag_human": "7h 30m ago",
+      "lag_human": "7h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -67,7 +67,7 @@
       "last_ok_at": "2026-07-12T04:09:34.464838-07:00",
       "expected_by": "2026-07-20T04:09:34.464838-07:00",
       "max_age_seconds": 691200,
-      "lag_human": "5d 1h ago",
+      "lag_human": "5d 2h ago",
       "entry_kind": "prepared_work"
     },
     {
@@ -93,7 +93,7 @@
       "last_ok_at": "2026-07-17T02:27:31-07:00",
       "expected_by": "2026-07-18T14:27:31-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "3h 33m ago",
+      "lag_human": "3h 48m ago",
       "entry_kind": "prepared_work"
     },
     {
@@ -106,7 +106,7 @@
       "last_ok_at": "2026-07-12T02:13:25.809850-07:00",
       "expected_by": "2026-07-20T02:13:25.809850-07:00",
       "max_age_seconds": 691200,
-      "lag_human": "5d 3h ago",
+      "lag_human": "5d 4h ago",
       "entry_kind": "prepared_work"
     },
     {
@@ -116,10 +116,10 @@
       "description": "Every 30 minutes, checks that your Google and Gmail logins are alive. The early-warning system for the auth failures that quietly break your pipelines.",
       "urgency": "urgent",
       "status": "healthy",
-      "last_ok_at": "2026-07-17T05:45:02-07:00",
-      "expected_by": "2026-07-17T09:45:02-07:00",
+      "last_ok_at": "2026-07-17T06:15:02-07:00",
+      "expected_by": "2026-07-17T10:15:02-07:00",
       "max_age_seconds": 14400,
-      "lag_human": "15m ago",
+      "lag_human": "50s ago",
       "entry_kind": "signal"
     },
     {
@@ -129,10 +129,10 @@
       "description": "Hourly check that the Chief of Staff's live code has no uncommitted changes (matches the committed git baseline). Catches accidental or unreviewed changes to the monitor itself.",
       "urgency": "urgent",
       "status": "healthy",
-      "last_ok_at": "2026-07-17T05:06:55.857997-07:00",
-      "expected_by": "2026-07-17T07:06:55.857997-07:00",
+      "last_ok_at": "2026-07-17T06:06:56.013984-07:00",
+      "expected_by": "2026-07-17T08:06:56.013984-07:00",
       "max_age_seconds": 7200,
-      "lag_human": "53m ago",
+      "lag_human": "8m ago",
       "entry_kind": "signal"
     },
     {
@@ -145,7 +145,7 @@
       "last_ok_at": "2026-07-17T05:30:49-07:00",
       "expected_by": "2026-07-17T08:30:49-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "30m ago",
+      "lag_human": "45m ago",
       "entry_kind": "signal"
     },
     {
@@ -155,10 +155,10 @@
       "description": "A read-only health probe of your Codex tool — context bloat, database growth, stale workspaces. Watching and recording for now; it doesn't alert yet.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-17T06:00:46-07:00",
+      "last_ok_at": "2026-07-17T06:15:47-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "7s ago",
+      "lag_human": "5s ago",
       "entry_kind": "signal"
     },
     {
@@ -168,7 +168,7 @@
       "description": "A read-only health probe of Claude Code itself — history, connectors, hooks. Watching and recording for now; it doesn't alert yet.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-17T06:00:52-07:00",
+      "last_ok_at": "2026-07-17T06:15:51-07:00",
       "expected_by": null,
       "max_age_seconds": null,
       "lag_human": "1s ago",
@@ -181,10 +181,10 @@
       "description": "Reads each tick for jobs that need attention and sends one de-duplicated alert. It only notifies — it never tries to fix things itself.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-17T05:45:51-07:00",
+      "last_ok_at": "2026-07-17T06:00:53-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "15m ago",
+      "lag_human": "14m ago",
       "entry_kind": "signal"
     },
     {
@@ -197,7 +197,7 @@
       "last_ok_at": "2026-07-16T14:15:37.841485-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "15h 45m ago",
+      "lag_human": "16h ago",
       "entry_kind": "signal"
     },
     {
@@ -210,7 +210,7 @@
       "last_ok_at": "2026-07-16T07:15:02-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "22h 45m ago",
+      "lag_human": "23h ago",
       "entry_kind": "signal"
     },
     {
@@ -236,7 +236,7 @@
       "last_ok_at": "2026-07-12T06:05:46.190880-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "4d 23h ago",
+      "lag_human": "5d ago",
       "entry_kind": "signal"
     },
     {
@@ -249,7 +249,7 @@
       "last_ok_at": "2026-07-16T08:30:01-07:00",
       "expected_by": "2026-07-17T10:30:01-07:00",
       "max_age_seconds": 93600,
-      "lag_human": "21h 30m ago",
+      "lag_human": "21h 45m ago",
       "entry_kind": "watch"
     },
     {
@@ -262,7 +262,7 @@
       "last_ok_at": "2026-07-17T05:15:51.588937-07:00",
       "expected_by": "2026-07-17T08:15:51.588937-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "45m ago",
+      "lag_human": "1h ago",
       "entry_kind": "signal"
     },
     {
@@ -275,7 +275,7 @@
       "last_ok_at": "2026-07-17T02:31:21.739575-07:00",
       "expected_by": "2026-07-18T08:31:21.739575-07:00",
       "max_age_seconds": 108000,
-      "lag_human": "3h 29m ago",
+      "lag_human": "3h 44m ago",
       "entry_kind": "signal"
     },
     {
@@ -288,7 +288,7 @@
       "last_ok_at": "2026-07-17T05:20:08.786424-07:00",
       "expected_by": "2026-07-17T08:20:08.786424-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "40m ago",
+      "lag_human": "55m ago",
       "entry_kind": "signal"
     },
     {
@@ -301,7 +301,7 @@
       "last_ok_at": "2026-07-17T03:30:01.684500-07:00",
       "expected_by": "2026-07-18T15:30:01.684500-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "2h 30m ago",
+      "lag_human": "2h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -314,7 +314,7 @@
       "last_ok_at": "2026-07-17T05:25:04.946079-07:00",
       "expected_by": "2026-07-17T08:25:04.946079-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "35m ago",
+      "lag_human": "50m ago",
       "entry_kind": "signal"
     },
     {
@@ -324,10 +324,10 @@
       "description": "Hourly publisher that copies the sanitized health board to Eric's public apps site so his phone can read it. This tile watches the published copy itself — if the publisher dies, the phone board goes stale and this tile names the culprit.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-17T05:00:46.530613-07:00",
-      "expected_by": "2026-07-17T08:00:46.530613-07:00",
+      "last_ok_at": "2026-07-17T06:00:53.427867-07:00",
+      "expected_by": "2026-07-17T09:00:53.427867-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "1h ago",
+      "lag_human": "14m ago",
       "entry_kind": "signal"
     },
     {
@@ -340,7 +340,7 @@
       "last_ok_at": "2026-07-17T05:47:05-07:00",
       "expected_by": "2026-07-18T17:47:05-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "13m ago",
+      "lag_human": "28m ago",
       "entry_kind": "signal"
     },
     {
@@ -353,7 +353,7 @@
       "last_ok_at": "2026-07-17T05:46:00-07:00",
       "expected_by": "2026-07-18T17:46:00-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "14m ago",
+      "lag_human": "29m ago",
       "entry_kind": "signal"
     },
     {
@@ -366,7 +366,7 @@
       "last_ok_at": "2026-07-17T05:46:00-07:00",
       "expected_by": "2026-07-18T17:46:00-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "14m ago",
+      "lag_human": "29m ago",
       "entry_kind": "signal"
     },
     {
@@ -379,7 +379,7 @@
       "last_ok_at": "2026-07-17T05:46:00-07:00",
       "expected_by": "2026-07-18T17:46:00-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "14m ago",
+      "lag_human": "29m ago",
       "entry_kind": "signal"
     },
     {
@@ -392,7 +392,7 @@
       "last_ok_at": "2026-07-17T05:46:01-07:00",
       "expected_by": "2026-07-18T17:46:01-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "14m ago",
+      "lag_human": "29m ago",
       "entry_kind": "signal"
     },
     {
@@ -405,7 +405,7 @@
       "last_ok_at": "2026-07-17T05:46:01-07:00",
       "expected_by": "2026-07-18T17:46:01-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "14m ago",
+      "lag_human": "29m ago",
       "entry_kind": "signal"
     },
     {
@@ -418,7 +418,7 @@
       "last_ok_at": "2026-07-17T05:47:07-07:00",
       "expected_by": "2026-07-18T17:47:07-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "13m ago",
+      "lag_human": "28m ago",
       "entry_kind": "signal"
     },
     {
@@ -441,10 +441,10 @@
       "description": "Hourly git backup of the shared-ops repo to private GitHub (same script family as the tracked chief-of-staff backup). Freshness via the script's own state JSON.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-17T05:05:01-07:00",
-      "expected_by": "2026-07-17T08:05:01-07:00",
+      "last_ok_at": "2026-07-17T06:05:01-07:00",
+      "expected_by": "2026-07-17T09:05:01-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "55m ago",
+      "lag_human": "10m ago",
       "entry_kind": "signal"
     },
     {
@@ -457,7 +457,7 @@
       "last_ok_at": "2026-07-17T05:45:01-07:00",
       "expected_by": "2026-07-17T08:45:01-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "15m ago",
+      "lag_human": "30m ago",
       "entry_kind": "signal"
     },
     {
@@ -470,7 +470,7 @@
       "last_ok_at": "2026-07-17T05:35:01-07:00",
       "expected_by": "2026-07-17T08:35:01-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "25m ago",
+      "lag_human": "40m ago",
       "entry_kind": "signal"
     },
     {
@@ -480,10 +480,10 @@
       "description": "3-hourly commit-if-changed snapshot of Claude's memory directory into the claude-memory-history repo. Scheduler-only evidence: the wrapper logs errors rather than failing, so this tile catches dead/missed task launches (the 2026-07-16 outage class), not in-run errors - those live in snapshot.log.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-17T02:47:54-07:00",
+      "last_ok_at": "2026-07-17T06:00:51-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "3h 12m ago",
+      "lag_human": "15m ago",
       "entry_kind": "signal"
     },
     {
@@ -506,10 +506,10 @@
       "description": "Nightly personal-data pipeline run (auto commit+push of derived views). Scheduler-only evidence; the pipeline carries its own internal data-freshness canary whose alert exits nonzero, so a failed or missed launch shows here.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-17T06:00:01-07:00",
+      "last_ok_at": "2026-07-17T06:15:01-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "52s ago",
+      "lag_human": "51s ago",
       "entry_kind": "signal"
     },
     {
@@ -535,7 +535,7 @@
       "last_ok_at": "2026-07-17T04:30:01-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "1h 30m ago",
+      "lag_human": "1h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -561,7 +561,7 @@
       "last_ok_at": "2026-07-17T05:45:59-07:00",
       "expected_by": "2026-07-18T17:45:59-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "14m ago",
+      "lag_human": "29m ago",
       "entry_kind": "signal"
     },
     {
@@ -574,7 +574,7 @@
       "last_ok_at": "2026-07-17T05:45:59-07:00",
       "expected_by": "2026-07-18T17:45:59-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "14m ago",
+      "lag_human": "29m ago",
       "entry_kind": "signal"
     },
     {
@@ -587,7 +587,7 @@
       "last_ok_at": "2026-07-17T05:47:07-07:00",
       "expected_by": "2026-07-18T17:47:07-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "13m ago",
+      "lag_human": "28m ago",
       "entry_kind": "signal"
     },
     {
@@ -600,7 +600,7 @@
       "last_ok_at": "2026-07-17T05:46:00-07:00",
       "expected_by": "2026-07-18T17:46:00-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "14m ago",
+      "lag_human": "29m ago",
       "entry_kind": "signal"
     },
     {
@@ -613,7 +613,7 @@
       "last_ok_at": "2026-07-17T05:47:07-07:00",
       "expected_by": "2026-07-18T17:47:07-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "13m ago",
+      "lag_human": "28m ago",
       "entry_kind": "signal"
     }
   ]
