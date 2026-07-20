@@ -13,3 +13,4 @@ auth.json
 .credentials.json
 service-account*.json
 *-token.txt
+.agent/

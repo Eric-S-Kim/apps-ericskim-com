@@ -98,6 +98,7 @@
     text-align: center;
     opacity: 0.55;
     overflow: hidden;
+    touch-action: manipulation;
   }
   .card .label {
     font-size: 14px;
@@ -129,6 +130,12 @@
   .card-app .remove { z-index: 2; }
   .card-app:active {
     transform: translateY(0);
+  }
+  .card.dragging {
+    transform: scale(1.06);
+    box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    opacity: .92;
+    z-index: 5;
   }
   /* monogram fallback icon (used by private/link tiles with no image) */
   .mono {
@@ -316,7 +323,11 @@
       var grid = document.getElementById('apps');
       var panel = document.getElementById('addPanel');
       var PKEY = 'eric-apps-private-v1';
+      var OKEY = 'eric-apps-order-v1';
       var publicApps = [];
+      var pickup = null;
+      var dragState = null;
+      var suppressClick = false;
 
       function safeUrl(u) {
         if (typeof u !== 'string' || !u) return null;
@@ -361,6 +372,19 @@
       function savePrivate(arr) {
         try { localStorage.setItem(PKEY, JSON.stringify(arr)); return true; } catch (_) { return false; }
       }
+      function loadOrder() {
+        try {
+          var v = JSON.parse(localStorage.getItem(OKEY));
+          return Array.isArray(v) && v.every(function (x) { return typeof x === 'string'; }) ? v.slice(0, 200) : [];
+        } catch (_) { return []; }
+      }
+      function saveOrder(arr) {
+        if (!Array.isArray(arr) || !arr.every(function (x) { return typeof x === 'string'; })) return false;
+        try { localStorage.setItem(OKEY, JSON.stringify(arr.slice(0, 200))); return true; } catch (_) { return false; }
+      }
+      function tileKey(app, isPrivate) {
+        return (isPrivate ? 'priv:' + (app.id || app.url) : 'pub:' + (app.slug || app.url));
+      }
       function genId() {
         try { return crypto.randomUUID(); }
         catch (_) { return 'p-' + Date.now() + '-' + Math.round(Math.random() * 1e6); }
@@ -372,11 +396,12 @@
         return d;
       }
 
-      function makeTile(app, isPrivate) {
+      function makeTile(app, isPrivate, key) {
         var url = safeUrl(app.url);
         var a = document.createElement('a');
         a.className = 'card card-app';
         a.href = url || '#';
+        a.dataset.key = key;
         a.setAttribute('aria-label', app.name || app.slug || 'app');
         var external = isPrivate || app.kind === 'link' || (url && isCrossOrigin(url));
         if (external) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
@@ -449,10 +474,112 @@
 
       function renderAll() {
         grid.innerHTML = '';
-        publicApps.forEach(function (app) { grid.appendChild(makeTile(app, false)); });
-        loadPrivate().forEach(function (app) { grid.appendChild(makeTile(app, true)); });
+        var items = [];
+        publicApps.forEach(function (app) {
+          items.push({ app: app, isPrivate: false, key: tileKey(app, false), index: items.length });
+        });
+        loadPrivate().forEach(function (app) {
+          items.push({ app: app, isPrivate: true, key: tileKey(app, true), index: items.length });
+        });
+        var order = loadOrder();
+        items.sort(function (a, b) {
+          var ai = order.indexOf(a.key); var bi = order.indexOf(b.key);
+          if (ai < 0 && bi < 0) return a.index - b.index;
+          if (ai < 0) return 1;
+          if (bi < 0) return -1;
+          return ai - bi || a.index - b.index;
+        });
+        items.forEach(function (x) { grid.appendChild(makeTile(x.app, x.isPrivate, x.key)); });
         grid.appendChild(addCard());
       }
+
+      function cancelPickup() {
+        if (!pickup) return;
+        clearTimeout(pickup.timer);
+        pickup = null;
+      }
+
+      function moveTile(e) {
+        var tile = dragState.tile;
+        var best = null; var bestDist = Infinity;
+        Array.prototype.forEach.call(grid.children, function (child) {
+          if (child === tile || !child.dataset.key) return;
+          var r = child.getBoundingClientRect();
+          var dx = e.clientX - (r.left + r.width / 2);
+          var dy = e.clientY - (r.top + r.height / 2);
+          var dist = dx * dx + dy * dy;
+          if (dist < bestDist) { bestDist = dist; best = { child: child, rect: r, dx: dx, dy: dy }; }
+        });
+        if (!best) return;
+        var after = Math.abs(best.dy) < best.rect.height / 2 ? best.dx > 0 : best.dy > 0;
+        var before = best.child;
+        if (after) {
+          before = best.child.nextElementSibling;
+          if (before === tile) before = tile.nextElementSibling;
+        }
+        var add = grid.querySelector('.card-add');
+        grid.insertBefore(tile, before && before !== add ? before : add);
+      }
+
+      function finishDrag(e) {
+        if (!dragState || e.pointerId !== dragState.pointerId) return;
+        dragState.tile.classList.remove('dragging');
+        var keys = [];
+        Array.prototype.forEach.call(grid.children, function (child) {
+          if (child.dataset.key) keys.push(child.dataset.key);
+        });
+        saveOrder(keys);
+        suppressClick = true;
+        dragState = null;
+      }
+
+      grid.addEventListener('pointerdown', function (e) {
+        var tile = e.target.closest('.card-app');
+        if (!tile || e.target.closest('.remove')) return;
+        cancelPickup();
+        pickup = { tile: tile, pointerId: e.pointerId, pointerType: e.pointerType, x: e.clientX, y: e.clientY };
+        pickup.timer = setTimeout(function () {
+          var pending = pickup;
+          pickup = null;
+          if (!pending) return;
+          pending.tile.classList.add('dragging');
+          try { navigator.vibrate(15); } catch (_) {}
+          try { pending.tile.setPointerCapture(pending.pointerId); } catch (_) {}
+          dragState = { tile: pending.tile, pointerId: pending.pointerId };
+        }, 450);
+      });
+      document.addEventListener('pointermove', function (e) {
+        if (pickup && e.pointerId === pickup.pointerId) {
+          var dx = e.clientX - pickup.x; var dy = e.clientY - pickup.y;
+          if (dx * dx + dy * dy > 100) cancelPickup();
+        }
+        if (dragState && e.pointerId === dragState.pointerId) moveTile(e);
+      });
+      document.addEventListener('pointerup', function (e) {
+        if (pickup && e.pointerId === pickup.pointerId) cancelPickup();
+        finishDrag(e);
+      });
+      document.addEventListener('pointercancel', function (e) {
+        if (pickup && e.pointerId === pickup.pointerId) cancelPickup();
+        finishDrag(e);
+      });
+      document.addEventListener('touchmove', function (e) {
+        if (!dragState) return;
+        e.preventDefault();
+      }, { passive: false });
+      grid.addEventListener('click', function (e) {
+        if (!suppressClick) return;
+        e.preventDefault(); e.stopPropagation(); suppressClick = false;
+      }, true);
+      grid.addEventListener('contextmenu', function (e) {
+        if (dragState || (pickup && pickup.pointerType === 'touch')) e.preventDefault();
+      });
+      grid.addEventListener('dragstart', function (e) {
+        // Anchors are natively draggable: a mouse drag would fire the HTML5
+        // link-drag and pointercancel our reorder before it starts. Tiles never
+        // need native drag, so suppress it outright.
+        if (e.target.closest('.card-app')) e.preventDefault();
+      });
 
       function openPanel() {
         panel.classList.add('open');
