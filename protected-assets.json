@@ -1,0 +1,24 @@
+{
+  "note": "LOAD-BEARING asset paths referenced from OUTSIDE this repo: device-private launcher tiles (phone localStorage) and installed PWAs point at these URLs. No grep of this repo can find those references, so deleting any of these silently breaks a phone's icon or app identity. Run `node scripts/check-protected-assets.mjs` before any commit that deletes or renames files. Removing a path from this list requires Eric's explicit sign-off.",
+  "paths": [
+    "icon-any-192.png",
+    "icon-any-512.png",
+    "icon-maskable-192.png",
+    "icon-maskable-512.png",
+    "manifest.json",
+    "icons/chief-of-staff-192.png",
+    "icons/chief-of-staff-red-192.png",
+    "icons/class-booker-192.png",
+    "icons/morning-brief-192.png",
+    "apps/chief-of-staff/icon-any-192.png",
+    "apps/class-booker/icon-any-192.png",
+    "apps/class-booker/icon-any-512.png",
+    "apps/class-booker/icon-maskable-192.png",
+    "apps/class-booker/icon-maskable-512.png",
+    "apps/class-booker/manifest.json",
+    "apps/vibe-finder/icon-any-192.png",
+    "apps/vibe-finder/icon-any-512.png",
+    "apps/vibe-finder/icon-maskable-192.png",
+    "apps/vibe-finder/icon-maskable-512.png"
+  ]
+}
