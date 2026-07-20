@@ -3,10 +3,10 @@
   "sanitized": true,
   "note": "Public sanitized view: job names, static descriptions, health, and freshness only. No paths/errors.",
   "monitor": {
-    "generated_at": "2026-07-20T12:45:47.884452-07:00",
-    "generated_at_ms": 1784576747884,
-    "harvest_evaluated_at": "2026-07-20T12:30:49.580334-07:00",
-    "harvest_evaluated_at_ms": 1784575849580,
+    "generated_at": "2026-07-20T13:00:47.571824-07:00",
+    "generated_at_ms": 1784577647571,
+    "harvest_evaluated_at": "2026-07-20T12:45:48.333841-07:00",
+    "harvest_evaluated_at_ms": 1784576748333,
     "monitor_status": "needs_attention",
     "jobs_total": 46,
     "jobs_needs_attention": 2,
@@ -25,8 +25,8 @@
       "description": "The 15-minute heartbeat of your Chief of Staff. Every cycle it gathers each job's status, runs the monitors, and refreshes this dashboard.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-20T12:30:49.580334-07:00",
-      "expected_by": "2026-07-20T13:15:49.580334-07:00",
+      "last_ok_at": "2026-07-20T12:45:48.333841-07:00",
+      "expected_by": "2026-07-20T13:30:48.333841-07:00",
       "max_age_seconds": 2700,
       "lag_human": "14m ago",
       "entry_kind": "signal"
@@ -41,7 +41,7 @@
       "last_ok_at": "2026-07-19T22:30:29.063932-07:00",
       "expected_by": "2026-07-21T22:30:29.063932-07:00",
       "max_age_seconds": 172800,
-      "lag_human": "14h 15m ago",
+      "lag_human": "14h 30m ago",
       "entry_kind": "signal"
     },
     {
@@ -67,7 +67,7 @@
       "last_ok_at": "2026-07-20T08:49:40.969482-07:00",
       "expected_by": "2026-07-28T08:49:40.969482-07:00",
       "max_age_seconds": 691200,
-      "lag_human": "3h 56m ago",
+      "lag_human": "4h 11m ago",
       "entry_kind": "prepared_work"
     },
     {
@@ -93,7 +93,7 @@
       "last_ok_at": "2026-07-20T02:25:53-07:00",
       "expected_by": "2026-07-21T14:25:53-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "10h 19m ago",
+      "lag_human": "10h 34m ago",
       "entry_kind": "prepared_work"
     },
     {
@@ -119,7 +119,7 @@
       "last_ok_at": "2026-07-20T12:45:01-07:00",
       "expected_by": "2026-07-20T16:45:01-07:00",
       "max_age_seconds": 14400,
-      "lag_human": "47s ago",
+      "lag_human": "15m ago",
       "entry_kind": "signal"
     },
     {
@@ -132,7 +132,7 @@
       "last_ok_at": "2026-07-20T12:06:55.600321-07:00",
       "expected_by": "2026-07-20T14:06:55.600321-07:00",
       "max_age_seconds": 7200,
-      "lag_human": "38m ago",
+      "lag_human": "53m ago",
       "entry_kind": "alert"
     },
     {
@@ -145,7 +145,7 @@
       "last_ok_at": "2026-07-20T12:30:48-07:00",
       "expected_by": "2026-07-20T15:30:48-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "15m ago",
+      "lag_human": "30m ago",
       "entry_kind": "signal"
     },
     {
@@ -155,7 +155,7 @@
       "description": "A read-only health probe of your Codex tool — context bloat, database growth, stale workspaces. Watching and recording for now; it doesn't alert yet.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-20T12:45:44-07:00",
+      "last_ok_at": "2026-07-20T13:00:44-07:00",
       "expected_by": null,
       "max_age_seconds": null,
       "lag_human": "4s ago",
@@ -168,7 +168,7 @@
       "description": "A read-only health probe of Claude Code itself — history, connectors, hooks. Watching and recording for now; it doesn't alert yet.",
       "urgency": "routine",
       "status": "watching",
-      "last_ok_at": "2026-07-20T12:45:47-07:00",
+      "last_ok_at": "2026-07-20T13:00:47-07:00",
       "expected_by": null,
       "max_age_seconds": null,
       "lag_human": "1s ago",
@@ -181,10 +181,10 @@
       "description": "Reads each tick for jobs that need attention and sends one de-duplicated alert. It only notifies — it never tries to fix things itself.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-20T12:30:49-07:00",
+      "last_ok_at": "2026-07-20T12:45:47-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "14m ago",
+      "lag_human": "15m ago",
       "entry_kind": "signal"
     },
     {
@@ -197,7 +197,7 @@
       "last_ok_at": "2026-07-20T08:30:19.257685-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "4h 15m ago",
+      "lag_human": "4h 30m ago",
       "entry_kind": "watch"
     },
     {
@@ -210,7 +210,7 @@
       "last_ok_at": "2026-07-20T07:15:02-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -223,7 +223,7 @@
       "last_ok_at": "2026-07-18T08:00:13-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "2d 4h ago",
+      "lag_human": "2d 5h ago",
       "entry_kind": "signal"
     },
     {
@@ -249,7 +249,7 @@
       "last_ok_at": "2026-07-20T08:30:01-07:00",
       "expected_by": "2026-07-21T10:30:01-07:00",
       "max_age_seconds": 93600,
-      "lag_human": "4h 15m ago",
+      "lag_human": "4h 30m ago",
       "entry_kind": "watch"
     },
     {
@@ -262,7 +262,7 @@
       "last_ok_at": "2026-07-20T12:15:51.219732-07:00",
       "expected_by": "2026-07-20T15:15:51.219732-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "29m ago",
+      "lag_human": "44m ago",
       "entry_kind": "signal"
     },
     {
@@ -275,7 +275,7 @@
       "last_ok_at": "2026-07-20T02:30:27.660997-07:00",
       "expected_by": "2026-07-21T08:30:27.660997-07:00",
       "max_age_seconds": 108000,
-      "lag_human": "10h 15m ago",
+      "lag_human": "10h 30m ago",
       "entry_kind": "signal"
     },
     {
@@ -288,7 +288,7 @@
       "last_ok_at": "2026-07-20T12:20:09.103259-07:00",
       "expected_by": "2026-07-20T15:20:09.103259-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "25m ago",
+      "lag_human": "40m ago",
       "entry_kind": "signal"
     },
     {
@@ -301,7 +301,7 @@
       "last_ok_at": "2026-07-20T03:30:02.114884-07:00",
       "expected_by": "2026-07-21T15:30:02.114884-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "9h 15m ago",
+      "lag_human": "9h 30m ago",
       "entry_kind": "signal"
     },
     {
@@ -314,7 +314,7 @@
       "last_ok_at": "2026-07-20T12:25:04.556569-07:00",
       "expected_by": "2026-07-20T15:25:04.556569-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "20m ago",
+      "lag_human": "35m ago",
       "entry_kind": "signal"
     },
     {
@@ -324,10 +324,10 @@
       "description": "Hourly publisher that copies the sanitized health board to Eric's public apps site so his phone can read it. This tile watches the published copy itself — if the publisher dies, the phone board goes stale and this tile names the culprit.",
       "urgency": "routine",
       "status": "healthy",
-      "last_ok_at": "2026-07-20T12:00:47.501278-07:00",
-      "expected_by": "2026-07-20T15:00:47.501278-07:00",
+      "last_ok_at": "2026-07-20T12:45:47.884452-07:00",
+      "expected_by": "2026-07-20T15:45:47.884452-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "45m ago",
+      "lag_human": "15m ago",
       "entry_kind": "signal"
     },
     {
@@ -340,7 +340,7 @@
       "last_ok_at": "2026-07-20T07:15:01-07:00",
       "expected_by": "2026-07-21T19:15:01-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -353,7 +353,7 @@
       "last_ok_at": "2026-07-20T07:15:04-07:00",
       "expected_by": "2026-07-21T19:15:04-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -366,7 +366,7 @@
       "last_ok_at": "2026-07-20T07:15:05-07:00",
       "expected_by": "2026-07-21T19:15:05-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -379,7 +379,7 @@
       "last_ok_at": "2026-07-20T07:15:05-07:00",
       "expected_by": "2026-07-21T19:15:05-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -392,7 +392,7 @@
       "last_ok_at": "2026-07-20T07:15:06-07:00",
       "expected_by": "2026-07-21T19:15:06-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -405,7 +405,7 @@
       "last_ok_at": "2026-07-20T07:15:06-07:00",
       "expected_by": "2026-07-21T19:15:06-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -418,7 +418,7 @@
       "last_ok_at": "2026-07-20T07:15:03-07:00",
       "expected_by": "2026-07-21T19:15:03-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -431,7 +431,7 @@
       "last_ok_at": "2026-07-19T08:00:00-07:00",
       "expected_by": "2026-07-28T08:00:00-07:00",
       "max_age_seconds": 777600,
-      "lag_human": "1d 4h ago",
+      "lag_human": "1d 5h ago",
       "entry_kind": "signal"
     },
     {
@@ -444,7 +444,7 @@
       "last_ok_at": "2026-07-20T12:05:01-07:00",
       "expected_by": "2026-07-20T15:05:01-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "40m ago",
+      "lag_human": "55m ago",
       "entry_kind": "signal"
     },
     {
@@ -457,7 +457,7 @@
       "last_ok_at": "2026-07-20T12:45:01-07:00",
       "expected_by": "2026-07-20T15:45:01-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "47s ago",
+      "lag_human": "15m ago",
       "entry_kind": "signal"
     },
     {
@@ -470,7 +470,7 @@
       "last_ok_at": "2026-07-20T12:35:01-07:00",
       "expected_by": "2026-07-20T15:35:01-07:00",
       "max_age_seconds": 10800,
-      "lag_human": "10m ago",
+      "lag_human": "25m ago",
       "entry_kind": "signal"
     },
     {
@@ -483,7 +483,7 @@
       "last_ok_at": "2026-07-20T11:47:54-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "57m ago",
+      "lag_human": "1h 12m ago",
       "entry_kind": "signal"
     },
     {
@@ -509,7 +509,7 @@
       "last_ok_at": "2026-07-20T10:23:39-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "2h 22m ago",
+      "lag_human": "2h 37m ago",
       "entry_kind": "signal"
     },
     {
@@ -522,7 +522,7 @@
       "last_ok_at": "2026-07-19T18:00:00-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "18h 45m ago",
+      "lag_human": "19h ago",
       "entry_kind": "alert"
     },
     {
@@ -535,7 +535,7 @@
       "last_ok_at": "2026-07-20T04:30:01-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "8h 15m ago",
+      "lag_human": "8h 30m ago",
       "entry_kind": "signal"
     },
     {
@@ -548,7 +548,7 @@
       "last_ok_at": "2026-07-19T05:00:00-07:00",
       "expected_by": null,
       "max_age_seconds": null,
-      "lag_human": "1d 7h ago",
+      "lag_human": "1d 8h ago",
       "entry_kind": "signal"
     },
     {
@@ -561,7 +561,7 @@
       "last_ok_at": "2026-07-20T07:15:03-07:00",
       "expected_by": "2026-07-21T19:15:03-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -574,7 +574,7 @@
       "last_ok_at": "2026-07-20T07:15:04-07:00",
       "expected_by": "2026-07-21T19:15:04-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -587,7 +587,7 @@
       "last_ok_at": "2026-07-20T07:15:03-07:00",
       "expected_by": "2026-07-21T19:15:03-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -600,7 +600,7 @@
       "last_ok_at": "2026-07-20T07:15:05-07:00",
       "expected_by": "2026-07-21T19:15:05-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     },
     {
@@ -613,7 +613,7 @@
       "last_ok_at": "2026-07-20T07:15:03-07:00",
       "expected_by": "2026-07-21T19:15:03-07:00",
       "max_age_seconds": 129600,
-      "lag_human": "5h 30m ago",
+      "lag_human": "5h 45m ago",
       "entry_kind": "signal"
     }
   ]
