@@ -137,6 +137,12 @@
     opacity: .92;
     z-index: 5;
   }
+  .card.placeholder {
+    border: 2px dashed var(--green-line);
+    border-radius: 24px;
+    background: transparent;
+    opacity: .4;
+  }
   /* monogram fallback icon (used by private/link tiles with no image) */
   .mono {
     width: 64px;
@@ -501,9 +507,10 @@
 
       function moveTile(e) {
         var tile = dragState.tile;
+        var placeholder = dragState.placeholder;
         var best = null; var bestDist = Infinity;
         Array.prototype.forEach.call(grid.children, function (child) {
-          if (child === tile || !child.dataset.key) return;
+          if (child === tile || child === placeholder || !child.dataset.key) return;
           var r = child.getBoundingClientRect();
           var dx = e.clientX - (r.left + r.width / 2);
           var dy = e.clientY - (r.top + r.height / 2);
@@ -515,15 +522,22 @@
         var before = best.child;
         if (after) {
           before = best.child.nextElementSibling;
-          if (before === tile) before = tile.nextElementSibling;
+          while (before === tile || before === placeholder) before = before.nextElementSibling;
         }
         var add = grid.querySelector('.card-add');
-        grid.insertBefore(tile, before && before !== add ? before : add);
+        grid.insertBefore(placeholder, before && before !== add ? before : add);
       }
 
       function finishDrag(e) {
         if (!dragState || e.pointerId !== dragState.pointerId) return;
-        dragState.tile.classList.remove('dragging');
+        var tile = dragState.tile;
+        var placeholder = dragState.placeholder;
+        grid.insertBefore(tile, placeholder);
+        placeholder.parentNode.removeChild(placeholder);
+        ['position', 'left', 'top', 'width', 'height', 'margin', 'z-index'].forEach(function (property) {
+          tile.style.removeProperty(property);
+        });
+        tile.classList.remove('dragging');
         var keys = [];
         Array.prototype.forEach.call(grid.children, function (child) {
           if (child.dataset.key) keys.push(child.dataset.key);
@@ -537,23 +551,43 @@
         var tile = e.target.closest('.card-app');
         if (!tile || e.target.closest('.remove')) return;
         cancelPickup();
-        pickup = { tile: tile, pointerId: e.pointerId, pointerType: e.pointerType, x: e.clientX, y: e.clientY };
+        pickup = { tile: tile, pointerId: e.pointerId, pointerType: e.pointerType,
+          x: e.clientX, y: e.clientY, pointerX: e.clientX, pointerY: e.clientY };
         pickup.timer = setTimeout(function () {
           var pending = pickup;
           pickup = null;
           if (!pending) return;
+          var rect = pending.tile.getBoundingClientRect();
+          var placeholder = document.createElement('div');
+          placeholder.className = 'card placeholder';
+          placeholder.style.width = rect.width + 'px';
+          placeholder.style.height = rect.height + 'px';
+          grid.insertBefore(placeholder, pending.tile);
+          pending.tile.style.position = 'fixed';
+          pending.tile.style.left = rect.left + 'px';
+          pending.tile.style.top = rect.top + 'px';
+          pending.tile.style.width = rect.width + 'px';
+          pending.tile.style.height = rect.height + 'px';
+          pending.tile.style.margin = '0';
+          pending.tile.style.zIndex = '1000';
           pending.tile.classList.add('dragging');
           try { navigator.vibrate(15); } catch (_) {}
           try { pending.tile.setPointerCapture(pending.pointerId); } catch (_) {}
-          dragState = { tile: pending.tile, pointerId: pending.pointerId };
+          dragState = { tile: pending.tile, placeholder: placeholder, pointerId: pending.pointerId,
+            grabDX: pending.pointerX - rect.left, grabDY: pending.pointerY - rect.top };
         }, 450);
       });
       document.addEventListener('pointermove', function (e) {
         if (pickup && e.pointerId === pickup.pointerId) {
+          pickup.pointerX = e.clientX; pickup.pointerY = e.clientY;
           var dx = e.clientX - pickup.x; var dy = e.clientY - pickup.y;
           if (dx * dx + dy * dy > 100) cancelPickup();
         }
-        if (dragState && e.pointerId === dragState.pointerId) moveTile(e);
+        if (dragState && e.pointerId === dragState.pointerId) {
+          dragState.tile.style.left = (e.clientX - dragState.grabDX) + 'px';
+          dragState.tile.style.top = (e.clientY - dragState.grabDY) + 'px';
+          moveTile(e);
+        }
       });
       document.addEventListener('pointerup', function (e) {
         if (pickup && e.pointerId === pickup.pointerId) cancelPickup();
@@ -662,8 +696,8 @@
           var apps = await res.json();
           publicApps = Array.isArray(apps) ? apps : [];
         } catch (e) {
-          // Stay usable even if apps.json is unreachable: fall back to the known-good tile.
-          publicApps = [{ slug: 'chief-of-staff', name: 'Chief of Staff', sub: 'are my automations healthy?', icon: 'apps/chief-of-staff/icon-any-192.png', kind: 'hosted', url: 'apps/chief-of-staff/' }];
+          // apps.json unreachable: render private tiles only
+          publicApps = [];
         }
         renderAll();
       })();
