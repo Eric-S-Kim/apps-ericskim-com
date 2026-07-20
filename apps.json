@@ -1,13 +1,1 @@
-[
-  {
-    "slug": "chief-of-staff",
-    "name": "Chief Of Staff",
-    "sub": "",
-    "icon": "apps/chief-of-staff/icon-any-192.png",
-    "kind": "hosted",
-    "url": "apps/chief-of-staff/",
-    "labelColor": "#7a1212",
-    "borderColor": "#cc2222",
-    "glowColor": "#cc222252"
-  }
-]
+[]
