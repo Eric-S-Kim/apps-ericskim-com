@@ -1,7 +1,7 @@
 {
   "name": "Class Booker",
   "short_name": "Classes",
-  "description": "One tap to book Eric's movement, dance, yoga and 5Rhythms classes.",
+  "description": "Private shortcuts to official class booking pages.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
