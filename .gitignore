@@ -1,4 +1,5 @@
-make-icons.py
+# root-level only: a bare `make-icons.py` hid same-named scripts in any subfolder
+/make-icons.py
 __pycache__/
 *.pyc
 .DS_Store
