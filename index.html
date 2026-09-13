@@ -21,6 +21,10 @@
     --lime: #D8FC7B;             /* lime accent (use sparingly) */
     --camel: #B59764;            /* earthy warmth (decorative only — too light for text) */
     --camel-deep: #7E5F28;       /* darkened camel for text — 5.4:1 on beige (WCAG AA) */
+    --gold: #E9A73C;            /* sunlight, shared with the launcher artwork */
+    --horizon-top: #EBC888;
+    --horizon-bottom: #E6BE76;
+    --warm-ink: #6B4E1E;
     --cream: #E9E2D1;
     --ink: #131313;
     --beige: #f7f4ee;
@@ -30,10 +34,10 @@
     --sans: 'TT Commons', 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   }
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   html, body {
     margin: 0;
     padding: 0;
-    background: var(--beige);
     color: var(--green);
     font-family: var(--sans);
     -webkit-font-smoothing: antialiased;
@@ -41,80 +45,130 @@
     min-height: 100dvh;
   }
   body {
+    position: relative;
+    isolation: isolate;
+    background: linear-gradient(180deg, #FCFAF4 0%, #F8EEDC 42%, #F5DFB4 72%, #EFD09A 100%) fixed;
     display: flex;
     flex-direction: column;
-    padding: max(env(safe-area-inset-top), 24px) 20px max(env(safe-area-inset-bottom), 24px);
+    padding: max(env(safe-area-inset-top), 34px) max(env(safe-area-inset-right), 20px) max(env(safe-area-inset-bottom), 40px) max(env(safe-area-inset-left), 20px);
+  }
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    pointer-events: none;
+    z-index: -1;
+  }
+  body::before {
+    width: 100%;
+    height: 290px;
+    left: 50%;
+    bottom: -23px;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse 230px 145px at center, color-mix(in srgb, var(--gold) 26%, transparent), transparent 70%);
+  }
+  body::after {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 109px;
+    border-top: 2px solid var(--gold);
+    background: linear-gradient(180deg, var(--horizon-top), var(--horizon-bottom));
+  }
+  .day-arc, header, .grid {
+    width: 100%;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .day-arc { height: 76px; flex: none; padding-top: 8px; }
+  .day-arc svg { display: block; width: 100%; height: 48px; overflow: visible; }
+  .day-curve { fill: none; stroke: rgba(126,95,40,.2); stroke-width: 1.5; stroke-linecap: round; }
+  .day-sun { fill: var(--gold); }
+  .day-halo { fill: var(--gold); opacity: .2; }
+  .day-labels {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 48px;
+    align-items: center;
+    font-size: 10.5px;
+    line-height: 20px;
+    font-weight: 500;
+    color: rgba(126,95,40,.6);
+    white-space: nowrap;
+  }
+  .day-labels > :last-child { text-align: right; }
+  .day-now {
+    color: var(--camel-deep);
+    font-weight: 600;
+    letter-spacing: 1.4px;
+    text-align: center;
+  }
+  @media (max-width: 390px) {
+    .day-now { letter-spacing: .4px; }
   }
   header {
-    text-align: center;
-    margin: 32px 0 40px;
-  }
-  .brandmark { width: 52px; height: 52px; display: inline-block; margin-bottom: 10px; }
-  .eyebrow {
-    font-family: var(--sans);
-    font-weight: 600;
-    font-size: 12px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--camel-deep);
-    margin: 0 0 6px;
+    text-align: left;
+    margin-top: 0;
+    margin-bottom: 22px;
+    flex: none;
   }
   h1 {
     margin: 0;
     font-family: var(--serif);
-    font-size: clamp(34px, 8.5vw, 54px);
+    font-size: 40px;
     font-weight: 400;
     letter-spacing: -0.01em;
     line-height: 1.08;
   }
-  h1 .hl { color: var(--green-700); }
   .tagline {
     font-family: var(--serif);
-    font-size: 15px;
-    color: var(--ink);
-    opacity: 0.62;
-    margin: 12px 0 0;
+    font-size: 14px;
+    line-height: 1.25;
+    color: rgba(19,19,19,.63);
+    margin: 6px 0 0;
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 16px;
-    max-width: 640px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
     margin: 0 auto;
     width: 100%;
-    flex: 1;
+    flex: none;
   }
   .card {
     position: relative;
-    aspect-ratio: 1;
-    border-radius: 24px;
-    background: var(--beige);
-    border: 1.5px dashed var(--green-line);
+    height: 128px;
+    min-width: 0;
+    border-radius: 20px;
+    background: rgba(255,255,255,.69);
+    border: 1px solid rgba(255,255,255,.8);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    text-align: center;
-    opacity: 0.55;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 13px 14px;
+    text-align: left;
     overflow: hidden;
     touch-action: manipulation;
   }
   .card .label {
     font-size: 14px;
     font-weight: 600;
-    margin-top: 11px;
+    line-height: 1.2;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .card .sub {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 400;
-    opacity: 0.7;
-    margin-top: 4px;
+    color: rgba(19,19,19,.6);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
   }
   .card-app {
     position: relative;
     opacity: 1;
-    border: 2.5px solid var(--green-line);
     cursor: pointer;
     text-decoration: none;
     color: inherit;
@@ -124,8 +178,6 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(0, 47, 16, 0.12);
   }
-  /* Flourishing Ray halo: a soft radial light behind each icon (the "ray") */
-  .glowlayer { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
   .card-app > img, .card-app .mono, .card-app .label, .card-app .sub { position: relative; z-index: 1; }
   .card-app .remove { z-index: 2; }
   .card-app:active {
@@ -137,35 +189,48 @@
     opacity: .92;
     z-index: 5;
   }
+  .card-app > img { width: 46px; height: 46px; object-fit: contain; flex: none; }
+  .card:focus-visible { outline: 2px solid var(--green-700); outline-offset: 3px; }
   .card.placeholder {
     border: 2px dashed var(--green-line);
-    border-radius: 24px;
+    border-radius: 20px;
     background: transparent;
     opacity: .4;
   }
   /* monogram fallback icon (used by private/link tiles with no image) */
   .mono {
-    width: 64px;
-    height: 64px;
+    width: 46px;
+    height: 46px;
+    flex: none;
     border-radius: 14px;
     background: var(--green);
     color: var(--beige);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
+    font-size: 23px;
     font-weight: 600;
   }
-  /* "+ Add app" tile (reuses the dashed .card look) */
+  /* Keep Add available below a full grid without creating a fifth full row. */
   .card-add {
     opacity: 1;
     cursor: pointer;
     color: var(--green);
     text-decoration: none;
     transition: transform 0.15s ease, background 0.15s ease;
+    border: 1px dashed var(--green-line);
   }
   .card-add:hover { transform: translateY(-2px); background: var(--green-soft); }
-  .card-add .plus { font-size: 38px; font-weight: 300; line-height: 1; opacity: 0.7; }
+  .card-add .plus { width: 46px; height: 46px; font-size: 38px; font-weight: 300; line-height: 46px; opacity: 0.7; }
+  .card-add:nth-child(odd):not(:first-child) {
+    grid-column: 1 / -1;
+    height: 44px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 14px;
+  }
+  .card-add:nth-child(odd):not(:first-child) .plus { width: auto; height: auto; font-size: 24px; line-height: 1; }
   /* remove (×) control on private tiles */
   .remove {
     position: absolute;
@@ -189,10 +254,12 @@
   @media (pointer: coarse) { .remove { opacity: 0.55; } }
   /* add-app form panel */
   .add-panel {
+    width: 100%;
     max-width: 480px;
     margin: 0 auto 24px;
     padding: 16px 18px;
-    background: var(--green-soft);
+    background: rgba(255,255,255,.69);
+    border: 1px solid rgba(255,255,255,.8);
     border-radius: 16px;
     flex-direction: column;
     gap: 10px;
@@ -226,13 +293,17 @@
   .add-note { font-size: 12px; opacity: 0.7; line-height: 1.4; margin: 4px 0 0; }
   footer {
     text-align: center;
-    margin-top: 48px;
-    padding-top: 24px;
-    border-top: 1px solid var(--green-line);
+    margin-top: auto;
+    padding-top: 16px;
+    flex: none;
     font-family: var(--serif);
     font-style: italic;
-    font-size: 14px;
-    opacity: 0.6;
+    font-size: 13px;
+    line-height: 17px;
+    color: color-mix(in srgb, var(--warm-ink) 75%, transparent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card, .remove, .day-sun, .day-halo { transition: none; }
   }
   @media (display-mode: standalone) {
     .install-hint { display: none; }
@@ -251,24 +322,17 @@
 </style>
 </head>
 <body>
-  <header>
-    <!-- Flourishing Ray brandmark: four hearts (the four pillars) form a clover (hope)
-         with a centered ray (optimism). Used sparingly, in brand green. -->
-    <svg class="brandmark" viewBox="-100 -100 200 200" aria-label="Flourishing Ray">
-      <g fill="#006823">
-        <path transform="rotate(0)"   d="M0,-8 C-30,-40 -44,-64 -24,-82 C-12,-92 0,-83 0,-66 C0,-83 12,-92 24,-82 C44,-64 30,-40 0,-8 Z"/>
-        <path transform="rotate(90)"  d="M0,-8 C-30,-40 -44,-64 -24,-82 C-12,-92 0,-83 0,-66 C0,-83 12,-92 24,-82 C44,-64 30,-40 0,-8 Z"/>
-        <path transform="rotate(180)" d="M0,-8 C-30,-40 -44,-64 -24,-82 C-12,-92 0,-83 0,-66 C0,-83 12,-92 24,-82 C44,-64 30,-40 0,-8 Z"/>
-        <path transform="rotate(270)" d="M0,-8 C-30,-40 -44,-64 -24,-82 C-12,-92 0,-83 0,-66 C0,-83 12,-92 24,-82 C44,-64 30,-40 0,-8 Z"/>
-      </g>
-      <g stroke="#D8FC7B" stroke-width="5" stroke-linecap="round">
-        <line x1="0" y1="-17" x2="0" y2="17"/><line x1="-17" y1="0" x2="17" y2="0"/>
-        <line x1="-12" y1="-12" x2="12" y2="12"/><line x1="-12" y1="12" x2="12" y2="-12"/>
-      </g>
-      <circle cx="0" cy="0" r="6.5" fill="#D8FC7B"/>
+  <div class="day-arc" aria-label="Local time of day">
+    <svg viewBox="0 0 372 48" width="372" height="48" aria-hidden="true">
+      <path class="day-curve" d="M2,46 Q186,-14 370,46"/>
+      <circle class="day-halo" id="dayHalo" cx="2" cy="46" r="17"/>
+      <circle class="day-sun" id="daySun" cx="2" cy="46" r="7"/>
     </svg>
-    <p class="eyebrow">A Personal App Store</p>
-    <h1>Eric's <span class="hl">Apps</span></h1>
+    <div class="day-labels"><span>5 AM</span><span class="day-now" id="dayNow"></span><span>10 PM</span></div>
+  </div>
+  <header>
+    <!-- Header mark intentionally omitted from this layout. -->
+    <h1>Eric's Apps</h1>
     <p class="tagline">illuminating what's flourishing &amp; what needs light</p>
   </header>
 
@@ -306,17 +370,48 @@
 
   <div class="grid" id="apps">
     <noscript>
-      <a href="apps/chief-of-staff/" class="card card-app" aria-label="Chief of Staff" style="border-color:#006823;">
-        <img src="icons/chief-of-staff-192.png" alt="" width="64" height="64" style="border-radius:14px;">
-        <div class="label" style="color:#002F10;">Chief of Staff</div>
-        <div class="sub">are my automations healthy?</div>
-      </a>
+      <p>Turn on JavaScript to view the apps saved on this device.</p>
     </noscript>
   </div>
 
   <footer>ericskim.com</footer>
 
   <script>
+    // Local clock only; recompute after backgrounding because timers may be throttled.
+    (function () {
+      var START = 5 * 60, END = 22 * 60;
+      var sun = document.getElementById('daySun');
+      var halo = document.getElementById('dayHalo');
+      var label = document.getElementById('dayNow');
+      function updateDayArc() {
+        var now = new Date();
+        var hours = now.getHours(), minutes = now.getMinutes();
+        var mins = hours * 60 + minutes;
+        var t = Math.min(1, Math.max(0, (mins - START) / (END - START)));
+        var x = 2 + 368 * t;
+        var y = 46 - 120 * t + 120 * t * t;
+        [sun, halo].forEach(function (dot) {
+          dot.setAttribute('cx', x);
+          dot.setAttribute('cy', y);
+        });
+        var phase = mins < START ? 'BEFORE FIRST LIGHT'
+          : mins < 450 ? 'FIRST LIGHT'
+          : mins < 660 ? 'MORNING'
+          : mins < 840 ? 'MIDDAY'
+          : mins < 1020 ? 'AFTERNOON'
+          : mins < 1170 ? 'GOLDEN HOUR'
+          : mins < 1275 ? 'DUSK'
+          : mins <= END ? 'NIGHTFALL' : 'AFTER DARK';
+        label.textContent = (hours % 12 || 12) + ':' + String(minutes).padStart(2, '0')
+          + (hours < 12 ? ' AM' : ' PM') + ' · ' + phase;
+      }
+      updateDayArc();
+      setInterval(updateDayArc, 60000);
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) updateDayArc();
+      });
+    })();
+
     // Eric's Apps launcher.
     //  - PUBLIC apps come from apps.json (committed; ship registers them).
     //  - PRIVATE apps are added on-device via the "+ Add app" tile and live ONLY in this
@@ -412,18 +507,10 @@
         var external = isPrivate || app.kind === 'link' || (url && isCrossOrigin(url));
         if (external) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
 
-        // Flourishing Ray halo: a soft radial light behind the icon (the app's "ray").
-        var glow = document.createElement('span');
-        glow.className = 'glowlayer';
-        var gc = safeColor(app.glowColor);
-        if (gc) glow.style.background = 'radial-gradient(circle at 50% 42%, ' + gc + ', transparent 60%)';
-        a.appendChild(glow);
-
         var iconStr = safeIconSrc(app.icon);
         if (iconStr) {
           var img = document.createElement('img');
-          img.src = iconStr; img.alt = ''; img.width = 64; img.height = 64;
-          img.style.borderRadius = '14px';
+          img.src = iconStr; img.alt = ''; img.width = 46; img.height = 46;
           img.onerror = function () { this.replaceWith(monogram(app.name)); };
           a.appendChild(img);
         } else {
@@ -438,9 +525,7 @@
         sub.textContent = (app.sub || '') + (external ? '  ↗' : '');
         a.appendChild(label); a.appendChild(sub);
 
-        // Per-app brand theming (validated hex only): label color + colored border.
-        var lc = safeColor(app.labelColor); if (lc) label.style.color = lc;
-        var bc = safeColor(app.borderColor); if (bc) a.style.border = '2.5px solid ' + bc;
+        // Sunlight shares one glass surface; stored tile themes stay untouched.
 
         if (isPrivate) {
           var rm = document.createElement('span');
