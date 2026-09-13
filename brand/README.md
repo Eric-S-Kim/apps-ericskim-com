@@ -7,7 +7,7 @@ from it — never edit them by hand.
 Rebuild after changing the master:
 
 ```
-python brand/make-icons.py
+python brand/build-launcher-icons.py
 ```
 
 The script reproduces the geometry of the original origami-crane icons exactly:
