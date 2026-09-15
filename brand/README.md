@@ -104,3 +104,59 @@ whole band was replaced by this treatment in the same day's work.
 The five-variant comparison was rendered from the live page with the device tiles
 seeded into `localStorage`, not mocked up — the same method used for the icon
 exploration sets.
+
+# Chief of Staff — meerkat sentinel
+
+`chief-of-staff-meerkat-master-1024.png` is the master for the Chief of Staff
+launcher tile. The deployed file is `apps/chief-of-staff/icon-any-192.png`.
+
+That deployed path is device-referenced — it is listed in `protected-assets.json`
+and is the exact URL in the `cos-private-board` row of `cos-phone-sync/device-tiles.json`
+(private canon), which the phone tile and the MB3 board both read. So the icon is
+changed by **replacing that file's contents in place**, never by adding a new path
+and repointing, which would need a fresh setup link.
+
+Rebuild both sizes from the master by resizing it; no script is needed, because
+the artwork is full-bleed with no inset or corner geometry to reproduce (unlike
+the four root launcher icons, which do need `build-launcher-icons.py`).
+
+Two older copies, `icons/chief-of-staff-192.png` and `icons/chief-of-staff-red-192.png`,
+are byte-identical to each other and still carry the previous red pulse mark. They
+are protected assets and were deliberately **left untouched** when the meerkat
+shipped: no current reference points at them, but a device holding an older setup
+link might, and a repo grep cannot see that. Update them only if a stale tile
+actually turns up.
+
+## Provenance
+
+Chosen 2026-09-15 as "6 · Meerkat sentinel", from a set of fifteen animal
+directions, each drawn in its own palette and drawing style.
+
+The brief came from the Chief of Staff's own `INVARIANTS.md`: *"observes automation
+evidence, projects the board, and alerts Eric. It does not repair, rerun, or mutate
+monitored systems."* That is a watcher with a voice and no hands, which rules out
+the obvious fixer animals — the beaver patching the dam, the mongoose killing the
+snake — because the mark would promise something the software deliberately refuses
+to do. A meerkat colony posts one sentinel on a mound while the rest forage; its
+entire job is to watch and call out, and nothing else. That is the invariant with
+fur on it.
+
+It replaces a red ECG pulse line. The pulse said "vital signs", which was close but
+read as *the alarm itself*; the CoS is the thing that watches and decides whether
+an alarm is warranted, and it is quiet most of the time.
+
+Built by exporting the chosen 296px concept frame from the pen.dev canvas at 4x
+with the card's cream fill and corner clipping removed, cropping to the alpha
+bounding box (the generated SVG panel does not fill the frame, and leaves uneven
+transparent side margins), then flattening onto the panel's own sampled colour
+`#D49856` so the tile is fully opaque with no alpha fringe at any size. The crop is
+1134x1184, so squaring it stretches the artwork about 4% horizontally — invisible
+at tile size and preferable to transparent side strips.
+
+Known mismatch, deliberately not changed: the tile's stored `borderColor` /
+`glowColor` in `device-tiles.json` are still red (`#cc2222`), chosen for the old
+pulse mark. Tile colours live in the device's localStorage, so changing them
+requires Eric to tap a fresh setup link — see rule 5 in the repo `CLAUDE.md`.
+
+An installed PWA caches its icons: after deploying a new icon, remove and re-add the
+home-screen shortcut to see it change.
