@@ -71,7 +71,6 @@
     left: 0;
     right: 0;
     height: clamp(76px, calc(100dvh - 806px), 109px);
-    border-top: 2px solid var(--gold);
     background: linear-gradient(180deg, var(--horizon-top), var(--horizon-bottom));
   }
   .day-arc, header, .grid {
@@ -291,17 +290,6 @@
   .add-panel .ghost { background: transparent; color: var(--green); border: 1.5px solid var(--green-line); }
   .add-err { color: #b3261e; font-size: 12px; min-height: 14px; margin: 0; }
   .add-note { font-size: 12px; opacity: 0.7; line-height: 1.4; margin: 4px 0 0; }
-  footer {
-    text-align: center;
-    margin-top: auto;
-    padding-top: 16px;
-    flex: none;
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: 13px;
-    line-height: 17px;
-    color: color-mix(in srgb, var(--warm-ink) 75%, transparent);
-  }
   @media (prefers-reduced-motion: reduce) {
     .card, .remove, .day-sun, .day-halo { transition: none; }
   }
@@ -373,8 +361,6 @@
       <p>Turn on JavaScript to view the apps saved on this device.</p>
     </noscript>
   </div>
-
-  <footer>ericskim.com</footer>
 
   <script>
     // Local clock only; recompute after backgrounding because timers may be throttled.
