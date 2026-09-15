@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBFBFD">
+<title>Chief of Staff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+  /* ---------- tokens (from the W4 / X5 design) ---------- */
+  :root {
+    --red: #C2352C;      /* needs you — the ONLY thing that is ever red */
+    --amber: #D98324;    /* watching a metric */
+    --grey: #B8B8BE;     /* idle by design */
+    --green: #3F9D6B;    /* healthy */
+    --bg: #FBFBFD;
+    --card: #FFFFFF;
+    --ink: #1D1D1F;
+    --sub: #6E6E73;
+    --dim: #8E8E93;
+    --chev: #C3C3C9;
+    --line: #E4E4E9;     /* hairline, detail */
+    --line-2: #DEDEE3;   /* hairline, overview */
+    --stroke: #E6E6EB;   /* card border, overview; also the ring track */
+    --stroke-2: #E9E9EE; /* card border, detail */
+    --band-bg: #EEF4F1;
+    --band-ink: #25543F;
+    --font: "Inter", -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--bg); }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.3;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "tnum" 1;
+    overflow-x: hidden;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; text-align: left; -webkit-tap-highlight-color: rgba(0,0,0,.04); }
+  [hidden] { display: none !important; }
+
+  .screen {
+    width: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-top: calc(28px + env(safe-area-inset-top, 0px));
+    padding-right: 22px;
+    padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+    padding-left: 22px;
+  }
+  .screen--detail { padding-top: calc(20px + env(safe-area-inset-top, 0px)); }
+
+  /* ---------- shared: labels, cards, rows ---------- */
+  .label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 8px;
+  }
+  .label--red { color: var(--red); }
+  .label--amber { color: var(--amber); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--stroke);
+    border-radius: 16px;
+    overflow: hidden;
+    display: block;
+  }
+  .card + .label, .ring-row + .label { margin-top: 22px; }
+  .card + .card { margin-top: 22px; }
+
+  .row {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 14px 16px;
+    position: relative;
+    cursor: pointer;
+  }
+  .row:active { background: #F6F6F8; }
+  .row + .row::before {
+    content: ""; position: absolute; left: 16px; right: 0; top: 0; height: 1px; background: var(--line-2);
+  }
+  .row__name {
+    flex: 1 1 auto; min-width: 0;
+    font-size: 15px; font-weight: 500; letter-spacing: -0.25px; line-height: 1.28; color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+  .row__meta { flex: 0 0 auto; font-size: 13px; font-weight: 400; color: var(--sub); white-space: nowrap; }
+  .row__count { flex: 0 0 auto; font-size: 15px; font-weight: 400; color: var(--sub); }
+  .chev { flex: 0 0 auto; width: 15px; height: 15px; color: var(--sub); }
+
+  /* ---------- screen 1: header + ring ---------- */
+  .hdr { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--sub); }
+  .hdr__title { font-weight: 500; }
+  .hdr__age { font-weight: 400; }
+
+  .ring-row { height: 196px; margin-top: 28px; display: flex; justify-content: center; align-items: center; }
+  .ring { position: relative; width: 196px; height: 196px; }
+  .ring svg { display: block; width: 196px; height: 196px; }
+  .ring__center {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .ring__num { font-size: 58px; font-weight: 500; letter-spacing: -2.2px; line-height: 1; color: var(--ink); }
+  .ring__of { font-size: 13px; color: var(--dim); margin-top: 3px; line-height: 1; }
+
+  /* ---------- screen 2 ---------- */
+  .back { display: inline-flex; align-items: center; gap: 4px; color: var(--sub); font-size: 15px; padding: 4px 6px 4px 0; margin-left: -2px; cursor: pointer; }
+  .back svg { width: 17px; height: 17px; }
+  .title { font-size: 30px; font-weight: 600; letter-spacing: -0.9px; line-height: 1.15; margin-top: 14px; color: var(--ink); }
+  .subtitle { font-size: 13.5px; color: var(--dim); margin-top: 3px; }
+  .screen--detail .label { margin-top: 22px; }
+  .screen--detail .card { border-radius: 14px; border-color: var(--stroke-2); }
+  .screen--detail .card + .label { margin-top: 26px; }
+
+  .drow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 14px; position: relative; cursor: pointer; }
+  .drow:active { background: #F6F6F8; }
+  .drow__name { flex: 1 1 auto; min-width: 0; font-size: 14.5px; font-weight: 500; letter-spacing: -0.2px; line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; }
+  .drow__age { flex: 0 0 auto; font-size: 13px; font-weight: 500; color: var(--sub); white-space: nowrap; }
+  .drow__count { flex: 0 0 auto; font-size: 14.5px; font-weight: 400; color: var(--dim); }
+  .drow .chev { width: 14px; height: 14px; color: var(--chev); }
+  .dot-slot { flex: 0 0 14px; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--grey); }
+  .dot--watching { background: var(--amber); }
+  .dot--idle { background: var(--grey); }
+  .dot--healthy { background: var(--green); }
+  .drow + .drow::before { content: ""; position: absolute; left: 14px; right: 0; top: 0; height: 1px; background: var(--line); }
+  .card--oldest .drow + .drow::before { left: 38px; }
+
+  .band {
+    margin-top: 16px; background: var(--band-bg); border-radius: 14px; padding: 15px 16px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; font-weight: 500; color: var(--band-ink); line-height: 1.3;
+  }
+  .band svg { flex: 0 0 auto; width: 17px; height: 17px; color: var(--green); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ring circle { transition: stroke-dasharray .4s ease, stroke-dashoffset .4s ease; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== SCREEN 1 — Overview (W4) ===================== -->
+<main class="screen screen--overview" id="screen-overview">
+  <header class="hdr">
+    <span class="hdr__title">Chief of Staff</span>
+    <span class="hdr__age" id="updated-age">—</span>
+  </header>
+
+  <div class="ring-row">
+    <div class="ring" role="img" id="ring" aria-label="">
+      <svg viewBox="0 0 196 196" aria-hidden="true">
+        <!-- track: thickness ≈4px (inner radius 96% of outer) -->
+        <circle id="ring-track" cx="98" cy="98" fill="none" stroke="#E6E6EB"/>
+        <!-- arcs: thickness ≈10px (inner radius 90%), start at 12 o'clock, clockwise; lengths set from DATA -->
+        <g transform="rotate(-90 98 98)">
+          <circle id="arc-needs" cx="98" cy="98" fill="none" stroke="#C2352C" pathLength="360" stroke-dasharray="0 360" stroke-dashoffset="0"/>
+          <circle id="arc-watching" cx="98" cy="98" fill="none" stroke="#D98324" pathLength="360" stroke-dasharray="0 360" stroke-dashoffset="0"/>
+        </g>
+      </svg>
+      <div class="ring__center">
+        <div class="ring__num" id="ring-num">0</div>
+        <div class="ring__of" id="ring-of">of 0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="label label--red" id="label-needs">Needs you</div>
+  <div class="card" id="card-needs" role="list"></div>
+
+  <div class="label label--amber" id="label-watching">Watching</div>
+  <div class="card" id="card-watching" role="list"></div>
+
+  <div class="card" id="card-tail">
+    <button class="row" id="tail-row" type="button" aria-label="All other systems">
+      <span class="row__name">All other systems</span>
+      <span class="row__count" id="tail-count">0</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+</main>
+
+<!-- ===================== SCREEN 2 — All other systems (X5) ===================== -->
+<main class="screen screen--detail" id="screen-detail" hidden>
+  <button class="back" id="back-btn" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+    <span>Overview</span>
+  </button>
+
+  <h1 class="title">All other systems</h1>
+  <div class="subtitle" id="detail-subtitle">0 sorted by time since last run</div>
+
+  <div class="label">Longest since a run</div>
+  <div class="card card--oldest" id="card-oldest" role="list"></div>
+
+  <div class="band" id="band">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+    <span id="band-text"></span>
+  </div>
+
+  <div class="label">By cadence</div>
+  <div class="card" id="card-cadence" role="list"></div>
+</main>
+
+<script>
+/* ============================================================================
+   DATA — the single source. Everything on screen is derived from this object.
+   state: "needs_you" | "watching" | "idle" | "healthy"
+   cadence: "q15" | "hourly" | "daily" | "weekly" | "monthly"
+   ========================================================================== */
+const DATA = {
+  updatedAt: "2026-09-14T15:40:00-07:00",
+  now: "2026-09-14T15:54:00-07:00", // fixture clock; delete this line when wiring real data (falls back to Date.now())
+  systems: [
+    { name: "Weekly Health Scan", state: "needs_you", lastRun: "2026-09-14T11:44:00-07:00", cadence: "weekly" },
+    { name: "Workstation health asks", state: "needs_you", lastRun: "2026-09-14T13:19:00-07:00", cadence: "daily" },
+    { name: "Residue Snapshotter", state: "needs_you", lastRun: "2026-09-14T15:27:00-07:00", cadence: "hourly" },
+    { name: "Canary: WHOOP Recovery + Daily Reconciliation", state: "needs_you", lastRun: "2026-09-14T09:52:00-07:00", cadence: "daily" },
+    { name: "WHOOP Reconciliation Monitor", state: "needs_you", lastRun: "2026-09-14T14:39:00-07:00", cadence: "hourly" },
+    { name: "Codex CLI Observability", state: "needs_you", lastRun: "2026-09-14T12:14:00-07:00", cadence: "daily" },
+    { name: "Follow-ups Health", state: "needs_you", lastRun: "2026-09-14T06:49:00-07:00", cadence: "daily" },
+    { name: "Weekly Trainer Brief", state: "watching", lastRun: "2026-09-13T12:54:00-07:00", cadence: "weekly" },
+    { name: "Altea Waitlist Auto-Booker", state: "watching", lastRun: "2026-09-14T10:06:00-07:00", cadence: "hourly" },
+    { name: "Claude Code Observability", state: "watching", lastRun: "2026-09-14T08:42:00-07:00", cadence: "daily" },
+    { name: "Canary: Automation Coverage", state: "watching", lastRun: "2026-09-14T07:24:00-07:00", cadence: "daily" },
+    { name: "Canary: Unexpected Runs", state: "watching", lastRun: "2026-09-14T05:09:00-07:00", cadence: "daily" },
+    { name: "Canary: Assumption Drift", state: "watching", lastRun: "2026-09-14T01:34:00-07:00", cadence: "weekly" },
+    { name: "Daily AI Health Check", state: "watching", lastRun: "2026-09-14T08:30:00-07:00", cadence: "daily" },
+    { name: "Weekend Scout — Tuesday lane (paused)", state: "idle", lastRun: "2026-09-08T11:54:00-07:00", cadence: "monthly" },
+    { name: "Morning Brief v2 tasks (disabled)", state: "idle", lastRun: "2026-09-09T06:54:00-07:00", cadence: "monthly" },
+    { name: "Sol Worker dispatch (dormant)", state: "idle", lastRun: "2026-09-10T13:54:00-07:00", cadence: "monthly" },
+    { name: "Cross-AI review round (dormant)", state: "idle", lastRun: "2026-09-11T04:54:00-07:00", cadence: "monthly" },
+    { name: "Codex self-audit (dormant)", state: "idle", lastRun: "2026-09-11T19:54:00-07:00", cadence: "weekly" },
+    { name: "Claims audit (dormant)", state: "idle", lastRun: "2026-09-12T14:54:00-07:00", cadence: "weekly" },
+    { name: "Error retrospective (retired)", state: "idle", lastRun: "2026-09-12T23:54:00-07:00", cadence: "weekly" },
+    { name: "Morning Brief 3 publisher", state: "healthy", lastRun: "2026-09-14T15:50:00-07:00", cadence: "q15" },
+    { name: "MB3 email poller", state: "healthy", lastRun: "2026-09-14T15:45:00-07:00", cadence: "q15" },
+    { name: "CoS phone-board publisher", state: "healthy", lastRun: "2026-09-14T15:42:00-07:00", cadence: "q15" },
+    { name: "Health OS auto-commit", state: "healthy", lastRun: "2026-09-14T15:47:00-07:00", cadence: "q15" },
+    { name: "Altea waitlist resolver", state: "healthy", lastRun: "2026-09-14T15:51:00-07:00", cadence: "q15" },
+    { name: "Pushover relay heartbeat", state: "healthy", lastRun: "2026-09-14T15:43:00-07:00", cadence: "q15" },
+    { name: "Workstation config backup", state: "healthy", lastRun: "2026-09-14T15:20:00-07:00", cadence: "hourly" },
+    { name: "Transcript archiver", state: "healthy", lastRun: "2026-09-14T15:13:00-07:00", cadence: "hourly" },
+    { name: "WHOOP token refresh", state: "healthy", lastRun: "2026-09-14T15:32:00-07:00", cadence: "hourly" },
+    { name: "WHOOP recovery ingest", state: "healthy", lastRun: "2026-09-14T15:36:00-07:00", cadence: "hourly" },
+    { name: "Gmail digest labeler", state: "healthy", lastRun: "2026-09-14T15:02:00-07:00", cadence: "hourly" },
+    { name: "Follow-ups harvest", state: "healthy", lastRun: "2026-09-14T15:39:00-07:00", cadence: "hourly" },
+    { name: "Calendar email intake", state: "healthy", lastRun: "2026-09-14T15:07:00-07:00", cadence: "hourly" },
+    { name: "Codex job monitor", state: "healthy", lastRun: "2026-09-14T15:25:00-07:00", cadence: "hourly" },
+    { name: "cos-board dead-man check", state: "healthy", lastRun: "2026-09-14T15:46:00-07:00", cadence: "hourly" },
+    { name: "Fleet board hygiene", state: "healthy", lastRun: "2026-09-14T15:17:00-07:00", cadence: "hourly" },
+    { name: "GWS auth probe", state: "healthy", lastRun: "2026-09-14T14:59:00-07:00", cadence: "hourly" },
+    { name: "Weekend Scout Daily", state: "healthy", lastRun: "2026-09-14T03:45:00-07:00", cadence: "daily" },
+    { name: "Weekend Scout Evening Preflight", state: "healthy", lastRun: "2026-09-13T21:00:00-07:00", cadence: "daily" },
+    { name: "Daily Health Check", state: "healthy", lastRun: "2026-09-14T08:30:00-07:00", cadence: "daily" },
+    { name: "Board notes prune", state: "healthy", lastRun: "2026-09-14T08:31:00-07:00", cadence: "daily" },
+    { name: "HYROX dashboard build", state: "healthy", lastRun: "2026-09-14T06:52:00-07:00", cadence: "daily" },
+    { name: "Cupcake tracker health", state: "healthy", lastRun: "2026-09-14T04:14:00-07:00", cadence: "daily" },
+    { name: "Nest chore-tracker ping", state: "healthy", lastRun: "2026-09-14T02:49:00-07:00", cadence: "daily" },
+    { name: "Email-to-calendar stager", state: "healthy", lastRun: "2026-09-14T10:21:00-07:00", cadence: "daily" },
+    { name: "Skill gateway sync", state: "healthy", lastRun: "2026-09-14T07:53:00-07:00", cadence: "daily" },
+    { name: "Learning inbox check", state: "healthy", lastRun: "2026-09-14T07:52:00-07:00", cadence: "daily" },
+    { name: "Promotion check", state: "healthy", lastRun: "2026-09-14T07:48:00-07:00", cadence: "daily" },
+    { name: "MB3 2AM roll", state: "healthy", lastRun: "2026-09-14T02:00:00-07:00", cadence: "daily" },
+    { name: "Deployment drift tile", state: "healthy", lastRun: "2026-09-14T12:35:00-07:00", cadence: "daily" },
+    { name: "Vibe Finder board publish", state: "healthy", lastRun: "2026-09-14T03:43:00-07:00", cadence: "daily" },
+    { name: "Scout image refresh", state: "healthy", lastRun: "2026-09-14T03:24:00-07:00", cadence: "daily" },
+    { name: "Ecobee climate journal", state: "healthy", lastRun: "2026-09-14T09:09:00-07:00", cadence: "daily" },
+    { name: "Restic prune", state: "healthy", lastRun: "2026-09-14T11:42:00-07:00", cadence: "daily" },
+    { name: "Memory index lint", state: "healthy", lastRun: "2026-09-14T07:45:00-07:00", cadence: "daily" },
+    { name: "Nightly CLAUDE.md eval", state: "healthy", lastRun: "2026-09-14T01:27:00-07:00", cadence: "daily" },
+    { name: "Wiki git sync", state: "healthy", lastRun: "2026-09-14T13:06:00-07:00", cadence: "daily" },
+    { name: "Scheduled-task audit", state: "healthy", lastRun: "2026-09-14T07:40:00-07:00", cadence: "daily" },
+    { name: "Railway deploy watcher", state: "healthy", lastRun: "2026-09-14T05:51:00-07:00", cadence: "daily" },
+    { name: "Chrome profile backup", state: "healthy", lastRun: "2026-09-14T00:24:00-07:00", cadence: "daily" },
+    { name: "Daily CoS Repair Review", state: "healthy", lastRun: "2026-09-14T07:14:00-07:00", cadence: "daily" },
+    { name: "Weekly Security Scan", state: "healthy", lastRun: "2026-09-13T19:44:00-07:00", cadence: "weekly" },
+    { name: "Weekly AI Briefing", state: "healthy", lastRun: "2026-09-13T18:49:00-07:00", cadence: "weekly" },
+    { name: "Tips Curate", state: "healthy", lastRun: "2026-09-13T17:40:00-07:00", cadence: "weekly" },
+    { name: "Legacy Surface Sweep", state: "healthy", lastRun: "2026-09-13T20:52:00-07:00", cadence: "weekly" },
+    { name: "Handoff sweep reminder", state: "healthy", lastRun: "2026-09-13T23:14:00-07:00", cadence: "weekly" },
+    { name: "Weekly pipeline review prep", state: "healthy", lastRun: "2026-09-13T22:46:00-07:00", cadence: "weekly" },
+    { name: "Vancouver events email", state: "healthy", lastRun: "2026-09-13T16:53:00-07:00", cadence: "weekly" },
+    { name: "Produce cart reminder", state: "healthy", lastRun: "2026-09-13T16:24:00-07:00", cadence: "weekly" },
+    { name: "Weekly WHOOP trend", state: "healthy", lastRun: "2026-09-14T06:04:00-07:00", cadence: "weekly" },
+    { name: "Plugin update check", state: "healthy", lastRun: "2026-09-14T09:34:00-07:00", cadence: "weekly" },
+  ]
+};
+
+/* ============================================================================
+   Derivations — nothing below is typed twice.
+   ========================================================================== */
+const OLDEST_ROWS = 8;                       // rows shown in "Longest since a run"
+const CADENCE = [                            // display order = most frequent first
+  ["q15", "Every 15 minutes"], ["hourly", "Hourly"], ["daily", "Daily"], ["weekly", "Weekly"], ["monthly", "Monthly"]
+];
+const RING_R = 98;                           // outer radius of the 196px ring
+const STATE_COLOR = { needs_you: "var(--red)", watching: "var(--amber)", idle: "var(--grey)", healthy: "var(--green)" };
+
+const $ = (id) => document.getElementById(id);
+const nowMs = () => (DATA.now ? Date.parse(DATA.now) : Date.now());
+const ageMs = (iso) => Math.max(0, nowMs() - Date.parse(iso));
+
+// <60m → "27m" · <24h → "4h 10m" · else "2d"
+function fmtAge(ms) {
+  const m = Math.floor(ms / 60000);
+  if (m < 60) return m + "m";
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + "h" + (m % 60 ? " " + (m % 60) + "m" : "");
+  return Math.floor(h / 24) + "d";
+}
+
+function chev(size, cls) {
+  return '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+function derive() {
+  const systems = DATA.systems.slice();
+  const total = systems.length;
+  const by = (st) => systems.filter((s) => s.state === st);
+  const counts = { needs_you: by("needs_you").length, watching: by("watching").length, idle: by("idle").length, healthy: by("healthy").length };
+  const others = systems.filter((s) => s.state !== "needs_you");   // "All other systems"
+  const oldest = others.slice().sort((a, b) => ageMs(b.lastRun) - ageMs(a.lastRun)).slice(0, OLDEST_ROWS);
+  const bandCount = others.length - oldest.length;                 // (total − needs_you) − rows shown
+  const cadence = CADENCE.map(([key, label]) => ({ key, label, count: others.filter((s) => s.cadence === key).length })).filter((c) => c.count > 0);
+  const deg = (n) => (total ? (n / total) * 360 : 0);              // count / total × 360 — computed, never typed
+  return { systems, total, counts, others, oldest, bandCount, cadence,
+           degNeeds: deg(counts.needs_you), degWatching: deg(counts.watching) };
+}
+
+function renderRing(d) {
+  // track: inner radius 96% → stroke centred at 98% of R, width 4% of R (≈3.9px)
+  const trackW = RING_R * 0.04, trackR = RING_R - trackW / 2;
+  // arcs: inner radius 90% → stroke centred at 95% of R, width 10% of R (≈9.8px); sits proud of the track
+  const arcW = RING_R * 0.10, arcR = RING_R - arcW / 2;
+  const t = $("ring-track"); t.setAttribute("r", trackR); t.setAttribute("stroke-width", trackW);
+  const a = $("arc-needs"), b = $("arc-watching");
+  for (const el of [a, b]) { el.setAttribute("r", arcR); el.setAttribute("stroke-width", arcW); }
+  a.setAttribute("stroke-dasharray", d.degNeeds + " 360");
+  a.setAttribute("stroke-dashoffset", "0");                              // starts at 12 o'clock
+  b.setAttribute("stroke-dasharray", d.degWatching + " 360");
+  b.setAttribute("stroke-dashoffset", String(-d.degNeeds));               // starts exactly where the red arc ends
+  a.dataset.deg = d.degNeeds.toFixed(2); b.dataset.deg = d.degWatching.toFixed(2);
+  $("ring-num").textContent = d.counts.needs_you;
+  $("ring-of").textContent = "of " + d.total;
+  $("ring").setAttribute("aria-label", d.counts.needs_you + " of " + d.total + " systems need you; " + d.counts.watching + " watching");
+}
+
+function rowHTML(s) {
+  return '<button class="row" type="button" data-name="' + esc(s.name) + '">' +
+    '<span class="row__name">' + esc(s.name) + '</span>' +
+    '<span class="row__meta">' + fmtAge(ageMs(s.lastRun)) + '</span>' + chev() + '</button>';
+}
+function drowHTML(s) {
+  return '<button class="drow" type="button" data-name="' + esc(s.name) + '">' +
+    '<span class="dot-slot"><span class="dot dot--' + esc(s.state) + '" style="background:' + STATE_COLOR[s.state] + '"></span></span>' +
+    '<span class="drow__name">' + esc(s.name) + '</span>' +
+    '<span class="drow__age">' + fmtAge(ageMs(s.lastRun)) + '</span>' + chev() + '</button>';
+}
+function cadenceHTML(c) {
+  return '<button class="drow" type="button" data-cadence="' + esc(c.key) + '">' +
+    '<span class="drow__name">' + esc(c.label) + '</span>' +
+    '<span class="drow__count">' + c.count + '</span>' + chev() + '</button>';
+}
+
+function render() {
+  const d = derive();
+  $("updated-age").textContent = fmtAge(ageMs(DATA.updatedAt)) + " ago";
+  renderRing(d);
+  $("card-needs").innerHTML = d.systems.filter((s) => s.state === "needs_you").map(rowHTML).join("");
+  $("card-watching").innerHTML = d.systems.filter((s) => s.state === "watching").map(rowHTML).join("");
+  $("label-needs").hidden = $("card-needs").hidden = d.counts.needs_you === 0;
+  $("label-watching").hidden = $("card-watching").hidden = d.counts.watching === 0;
+  $("tail-count").textContent = d.others.length;
+
+  $("detail-subtitle").textContent = d.others.length + " sorted by time since last run";
+  $("card-oldest").innerHTML = d.oldest.map(drowHTML).join("");
+  $("band-text").textContent = "The other " + d.bandCount + " all ran in the last 24 hours";
+  $("card-cadence").innerHTML = d.cadence.map(cadenceHTML).join("");
+  window.__derived = d;   // exposed for acceptance checks
+}
+
+/* ---------- navigation: two screens, hash-backed so the Android back button works ---------- */
+function showScreen(which) {
+  const detail = which === "detail";
+  $("screen-overview").hidden = detail;
+  $("screen-detail").hidden = !detail;
+  document.title = detail ? "All other systems" : "Chief of Staff";
+  window.scrollTo(0, 0);
+}
+function syncFromHash() { showScreen(location.hash === "#all" ? "detail" : "overview"); }
+$("tail-row").addEventListener("click", () => { if (location.hash !== "#all") location.hash = "#all"; else showScreen("detail"); });
+$("back-btn").addEventListener("click", () => { if (location.hash === "#all") history.back(); else showScreen("overview"); });
+window.addEventListener("hashchange", syncFromHash);
+// Row destinations don't exist yet: tapping a system or cadence row is a deliberate no-op (not a dead link).
+document.addEventListener("click", (e) => { const b = e.target.closest("button[data-name],button[data-cadence]"); if (b) e.preventDefault(); });
+
+render();
+syncFromHash();
+</script>
+<script>
+/* ship:sw-register v1 — generated by ship. updateViaCache:'none' re-fetches sw.js on every
+ * check; reg.update() on tab-focus checks for a new deploy; controllerchange reloads
+ * once so nobody keeps running the old code. */
+(() => {
+  if (!('serviceWorker' in navigator)) return;
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloaded) return; // first-ever install: nothing stale to replace
+    reloaded = true;
+    location.reload();
+  });
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then((reg) => {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update().catch((e) => console.warn('sw update check failed', e));
+      });
+    }).catch((e) => console.warn('sw registration failed', e));
+  });
+})();
+</script>
+</body>
+</html>
