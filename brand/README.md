@@ -39,32 +39,32 @@ phone launcher tile URL), so the icon is changed by replacing that file's conten
 place — never by adding a new path and repointing, which would need a fresh setup link.
 This master exists so the artwork survives if that file is ever rebuilt or swept.
 
-It is true vector — 131 shapes, no raster — so there is nothing to regenerate at other
-sizes; one file serves every size.
+It is true vector — 82 paths plus 2 background rects, no raster — so there is nothing to
+regenerate at other sizes; one file serves every size.
 
 ## Provenance
 
-A red berry jar and a tall green pickle jar on a cream shelf, folk-woodcut style, on a
-deep brown ground (`#3C1A04`). Chosen 2026-09-14 as "01 True Scale", where the two jars
-keep their real relative heights.
+A chef mouse carrying a full sack home to stacked pantry shelves, folk-woodcut style, on
+a deep brown ground (`#3B2212` frame, `#402719` panel). Chosen 2026-09-15 as "04 The
+Haul", from the "refilling the pantry" set — the concept is restocking as an arrival
+rather than a shelf inventory.
 
-It replaces a five-jar still life that used the same drawing language. Five jars across
-left each one about a fifth of the icon width, which turned to mush at the 48px launcher
-size; two jars give each roughly four times the area. An earlier two-jar attempt paired
-the red jar with the honey jar, but gold on brown sat too close in value and the pair
-fused into one shape when small — the green jar separates by both hue and value.
+It replaces a red-berry-and-green-pickle jar pair ("01 True Scale", 2026-09-14), which
+itself replaced a five-jar still life. The jar icons said "preserves"; the chef mouse
+says "someone is refilling your shelf", which is what the app actually does. The trade is
+density: the mouse is a single strong silhouette (chef hat + head + sack) that survives
+the 48px launcher size, but the shelf jars behind it are decoration at that size, not
+readable objects.
 
-The jar artwork is reused from the five-jar original rather than redrawn, so the style is
-identical by construction. The exploration sets (five single/multi-jar compositions, then
-five arrangements of the red-and-green pair, each rendered at real launcher sizes for
-judging) live in the pen.dev canvas document that produced them; this repo keeps only the
-chosen master.
-
-Note when rebuilding from that canvas: the canvas cards place *scaled copies* of each jar,
-and pen.dev rescales a path by resizing its node box while leaving the stored geometry
-alone. Exporting those copies shape-by-shape with only a translate silently drops the
-scale and scatters each jar's contents outside its jar. Compose from the original
-unscaled jars instead and apply the placement as one group transform.
+Note when rebuilding from the pen.dev canvas that produced the exploration sets: the
+canvas cards place *scaled copies* of the artwork, and pen.dev rescales a path by
+resizing its node box while leaving the stored geometry alone. Exporting those copies
+shape-by-shape with only a translate silently drops the scale and scatters each shape's
+contents. The reliable route is pen.dev's `html-css` export of the chosen 296x296 concept
+frame — every layer comes out as an absolutely-positioned `<svg>` carrying its own
+viewBox, which flattens losslessly into one `<g transform="translate(...) scale(...)">`
+per layer. Three canvas artifacts are dropped in that flattening: two zero-geometry paths
+and a stray blue guide segment.
 
 An installed PWA caches its icons: after deploying a new icon, remove and re-add the
 home-screen shortcut to see it change.
