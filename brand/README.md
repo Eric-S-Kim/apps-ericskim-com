@@ -68,3 +68,39 @@ and a stray blue guide segment.
 
 An installed PWA caches its icons: after deploying a new icon, remove and re-add the
 home-screen shortcut to see it change.
+
+# Enveloped sunset glow
+
+`sunset-enveloped.css` is the master for the background treatment on the root
+`index.html`. It is a *copy*, not the served file — the live rules are inlined in
+`index.html`'s `<style>` block, because that page ships as a single file with no
+external stylesheet. Change the page and this master together, or the master
+silently rots.
+
+Self-contained apart from `--gold`, with the reuse steps and the failure modes
+documented in the file's header comment. Read that header before pasting it
+anywhere — three of the four gotchas listed are ones that actually happened.
+
+## Provenance
+
+Chosen 2026-09-15 as "4 · Enveloped — light on three sides", from a set of five
+sunset treatments rendered at real phone width (412px) against Eric's actual
+tiles. The others were "Low Sun" (band dissolved entirely, most restrained),
+"Ember Horizon" (kept a horizon, feathered the seam, terracotta floor),
+"Alpenglow" (muted rose above the amber) and "Deep Dusk" (bronze floor, small
+concentrated sun — the richest, and the one that tinted the bottom row of tiles
+most).
+
+Enveloped won because it is the only one where the light also comes up the left
+and right edges, so the screen reads as sitting inside the glow rather than above
+a landscape — while staying subtle, since the side columns are only 15% gold.
+
+It replaced a flat amber slab (`--horizon-top`/`--horizon-bottom`, a
+`clamp()`-height band) that carried a 2px gold `border-top`. Because that band was
+`position: fixed`, the rule appeared to cut straight across the app tiles whenever
+the page scrolled. The rule was removed first (2026-09-15, commit `bcfee02`); the
+whole band was replaced by this treatment in the same day's work.
+
+The five-variant comparison was rendered from the live page with the device tiles
+seeded into `localStorage`, not mocked up — the same method used for the icon
+exploration sets.

@@ -22,8 +22,7 @@
     --camel: #B59764;            /* earthy warmth (decorative only — too light for text) */
     --camel-deep: #7E5F28;       /* darkened camel for text — 5.4:1 on beige (WCAG AA) */
     --gold: #E9A73C;            /* sunlight, shared with the launcher artwork */
-    --horizon-top: #EBC888;
-    --horizon-bottom: #E6BE76;
+    --horizon-glow: #EAB772;     /* sunset floor — see brand/sunset-enveloped.css */
     --warm-ink: #6B4E1E;
     --cream: #E9E2D1;
     --ink: #131313;
@@ -47,7 +46,7 @@
   body {
     position: relative;
     isolation: isolate;
-    background: linear-gradient(180deg, #FCFAF4 0%, #F8EEDC 42%, #F5DFB4 72%, #EFD09A 100%) fixed;
+    background: linear-gradient(180deg, #FDFBF6 0%, #FBF3E7 50%, #F7E7CF 100%) fixed;
     display: flex;
     flex-direction: column;
     padding: max(env(safe-area-inset-top), 34px) max(env(safe-area-inset-right), 20px) max(env(safe-area-inset-bottom), 40px) max(env(safe-area-inset-left), 20px);
@@ -58,20 +57,27 @@
     pointer-events: none;
     z-index: -1;
   }
+  /* "Enveloped" sunglow: one wide bloom rising off the floor plus a soft column of
+     light up each side edge, so the screen sits inside the light rather than above a
+     horizon. Full-viewport and fixed, so it never scrolls with the tiles. */
   body::before {
-    width: 100%;
-    height: 290px;
-    left: 50%;
-    bottom: -23px;
-    transform: translateX(-50%);
-    background: radial-gradient(ellipse 230px 145px at center, color-mix(in srgb, var(--gold) 26%, transparent), transparent 70%);
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background:
+      radial-gradient(ellipse 430px 290px at 50% 107%, color-mix(in srgb, var(--gold) 34%, transparent), transparent 66%),
+      radial-gradient(ellipse 190px 760px at -8% 68%, color-mix(in srgb, var(--gold) 15%, transparent), transparent 70%),
+      radial-gradient(ellipse 190px 760px at 108% 68%, color-mix(in srgb, var(--gold) 15%, transparent), transparent 70%);
   }
   body::after {
     bottom: 0;
     left: 0;
     right: 0;
-    height: clamp(76px, calc(100dvh - 806px), 109px);
-    background: linear-gradient(180deg, var(--horizon-top), var(--horizon-bottom));
+    height: 160px;
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--horizon-glow) 0%, transparent),
+      color-mix(in srgb, var(--horizon-glow) 46%, transparent));
   }
   .day-arc, header, .grid {
     width: 100%;

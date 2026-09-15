@@ -1,0 +1,85 @@
+/* ===========================================================================
+   "Enveloped" sunset glow — master
+   ---------------------------------------------------------------------------
+   The background treatment used by Eric's Apps (root index.html). Chosen
+   2026-09-15 as "4 · Enveloped — light on three sides", from a set of five.
+
+   The idea: the warmth does NOT come from a horizon band with an edge. It comes
+   from one wide bloom rising off the floor plus a soft column of light up each
+   side edge, so the screen sits INSIDE the light instead of above a landscape.
+
+   Self-contained — the only external dependency is --gold. Drop this whole file
+   into a page's <style>, or copy the three rules into an existing sheet.
+
+   To reuse:
+     1. Ensure --gold and --horizon-glow are defined (defaults below).
+     2. The host element must be the one that paints the page background,
+        normally <body>. It needs `position: relative` and `isolation: isolate`
+        so the z-index:-1 layers stay behind content but inside this stacking
+        context.
+     3. Content must sit above: give real children no z-index at all (they win
+        against -1 automatically), or z-index >= 0.
+
+   Gotchas learned the hard way:
+     - Both layers are `position: fixed`, so they stay put while content
+       scrolls. That is the point — a glow that scrolls reads as an object, not
+       as light. It is also why an earlier version's `border-top` on ::after
+       appeared to "cut across the tiles" when scrolling: a fixed rule sitting
+       over a moving grid. Never put a visible border on these layers.
+     - ::before is full-viewport (top/bottom/left/right all 0). Do NOT give it
+       width:100% plus left:50% plus translateX(-50%) — the side glows are
+       positioned in percentages of the layer box, so any offset box moves them
+       off the screen edges and the "enveloped" effect disappears.
+     - The side ellipses are deliberately centred slightly OUTSIDE the viewport
+       (-8% and 108%) so only their falloff is visible. Pulling them inside the
+       edge makes two obvious blobs.
+     - Keep the floor gradient's top stop at 0% alpha of the SAME colour as the
+       bottom stop. Fading to `transparent` (= transparent black) can grey the
+       midpoint in engines that do not premultiply.
+     - Translucent cards over this pick up the tint. That is intended, but it
+       means card backgrounds need to stay light (>= ~.65 white) or the bottom
+       row of content loses contrast.
+   =========================================================================== */
+
+:root {
+  --gold: #E9A73C;          /* sunlight, shared with the launcher artwork */
+  --horizon-glow: #EAB772;  /* sunset floor */
+}
+
+body {
+  position: relative;
+  isolation: isolate;
+  /* Base wash stays light — the glow layers do the warming, not this. */
+  background: linear-gradient(180deg, #FDFBF6 0%, #FBF3E7 50%, #F7E7CF 100%) fixed;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Floor bloom + a column of light up each side edge. */
+body::before {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background:
+    radial-gradient(ellipse 430px 290px at 50% 107%, color-mix(in srgb, var(--gold) 34%, transparent), transparent 66%),
+    radial-gradient(ellipse 190px 760px at -8% 68%,  color-mix(in srgb, var(--gold) 15%, transparent), transparent 70%),
+    radial-gradient(ellipse 190px 760px at 108% 68%, color-mix(in srgb, var(--gold) 15%, transparent), transparent 70%);
+}
+
+/* Amber floor, fading up to nothing. No band, no rule, no seam. */
+body::after {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 160px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--horizon-glow) 0%, transparent),
+    color-mix(in srgb, var(--horizon-glow) 46%, transparent));
+}
