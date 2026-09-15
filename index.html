@@ -295,7 +295,7 @@
       <circle class="day-halo" id="dayHalo" cx="2" cy="46" r="17"/>
       <circle class="day-sun" id="daySun" cx="2" cy="46" r="7"/>
     </svg>
-    <div class="day-labels"><span>7 AM</span><span class="day-now" id="dayNow"></span><span>11 PM</span></div>
+    <div class="day-labels"><span>8 AM</span><span class="day-now" id="dayNow"></span><span>11 PM</span></div>
   </div>
   <header>
     <!-- Header mark intentionally omitted from this layout. -->
@@ -334,7 +334,7 @@
   <script>
     // Local clock only; recompute after backgrounding because timers may be throttled.
     (function () {
-      var START = 7 * 60, END = 23 * 60;
+      var START = 8 * 60, END = 23 * 60;
       var sun = document.getElementById('daySun');
       var halo = document.getElementById('dayHalo');
       var label = document.getElementById('dayNow');
@@ -350,15 +350,14 @@
           dot.setAttribute('cy', y);
         });
         var phase = mins < START ? 'BEFORE FIRST LIGHT'
-          : mins < 450 ? 'FIRST LIGHT'
+          : mins < 510 ? 'FIRST LIGHT'
           : mins < 660 ? 'MORNING'
           : mins < 840 ? 'MIDDAY'
           : mins < 1020 ? 'AFTERNOON'
           : mins < 1170 ? 'GOLDEN HOUR'
           : mins < 1275 ? 'DUSK'
           : mins <= END ? 'NIGHTFALL' : 'AFTER DARK';
-        label.textContent = (hours % 12 || 12) + ':' + String(minutes).padStart(2, '0')
-          + (hours < 12 ? ' AM' : ' PM') + ' · ' + phase;
+        label.textContent = phase;
       }
       updateDayArc();
       setInterval(updateDayArc, 60000);
