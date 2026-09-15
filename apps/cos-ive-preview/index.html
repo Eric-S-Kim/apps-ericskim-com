@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FBFBFD">
+<meta name="theme-color" content="#F2F2F5">
 <title>Chief of Staff</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   /* ---------- tokens (from the W4 / X5 design) ---------- */
   :root {
@@ -15,19 +15,19 @@
     --amber: #D98324;    /* watching a metric */
     --grey: #B8B8BE;     /* idle by design */
     --green: #3F9D6B;    /* healthy */
-    --bg: #FBFBFD;
+    --bg: #F2F2F5;       /* darker than the cards so they float */
     --card: #FFFFFF;
     --ink: #1D1D1F;
-    --sub: #6E6E73;
-    --dim: #8E8E93;
-    --chev: #C3C3C9;
-    --line: #E4E4E9;     /* hairline, detail */
-    --line-2: #DEDEE3;   /* hairline, overview */
-    --stroke: #E6E6EB;   /* card border, overview; also the ring track */
-    --stroke-2: #E9E9EE; /* card border, detail */
+    --sub: #86868B;
+    --dim: #9A9AA0;
+    --chev: #B9B9C0;
+    --line: #ECECF1;     /* hairline — a whisper; the shadow does the separating */
+    --line-2: #ECECF1;   /* same value everywhere */
+    --stroke: #E7E7EC;   /* ring track ONLY (cards have no border) */
+    --lift: 0 1px 2px rgba(10,10,15,.06), 0 10px 26px -8px rgba(10,10,15,.10);  /* contact + ambient */
     --band-bg: #EEF4F1;
     --band-ink: #25543F;
-    --font: "Inter", -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+    --font: "Inter Tight", "Inter", -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -60,7 +60,7 @@
 
   /* ---------- shared: labels, cards, rows ---------- */
   .label {
-    font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+    font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
     color: var(--dim); margin-bottom: 8px;
   }
   .label--red { color: var(--red); }
@@ -68,8 +68,8 @@
 
   .card {
     background: var(--card);
-    border: 1px solid var(--stroke);
-    border-radius: 16px;
+    border-radius: 18px;
+    box-shadow: var(--lift);
     overflow: hidden;
     display: block;
   }
@@ -82,21 +82,21 @@
     position: relative;
     cursor: pointer;
   }
-  .row:active { background: #F6F6F8; }
+  .row:active { background: #F7F7F9; }
   .row + .row::before {
     content: ""; position: absolute; left: 16px; right: 0; top: 0; height: 1px; background: var(--line-2);
   }
   .row__name {
     flex: 1 1 auto; min-width: 0;
-    font-size: 15px; font-weight: 500; letter-spacing: -0.25px; line-height: 1.28; color: var(--ink);
+    font-size: 15px; font-weight: 500; letter-spacing: -0.3px; line-height: 1.3; color: var(--ink);
     overflow-wrap: anywhere;
   }
-  .row__meta { flex: 0 0 auto; font-size: 13px; font-weight: 400; color: var(--sub); white-space: nowrap; }
-  .row__count { flex: 0 0 auto; font-size: 15px; font-weight: 400; color: var(--sub); }
-  .chev { flex: 0 0 auto; width: 15px; height: 15px; color: var(--sub); }
+  .row__meta { flex: 0 0 auto; font-size: 13px; font-weight: 400; letter-spacing: -0.1px; color: var(--sub); white-space: nowrap; }
+  .row__count { flex: 0 0 auto; font-size: 15px; font-weight: 400; letter-spacing: -0.1px; color: var(--sub); }
+  .chev { flex: 0 0 auto; width: 14px; height: 14px; color: var(--chev); }
 
   /* ---------- screen 1: header + ring ---------- */
-  .hdr { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--sub); }
+  .hdr { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; letter-spacing: -0.1px; color: var(--sub); }
   .hdr__title { font-weight: 500; }
   .hdr__age { font-weight: 400; }
 
@@ -107,23 +107,23 @@
     position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
     pointer-events: none;
   }
-  .ring__num { font-size: 58px; font-weight: 500; letter-spacing: -2.2px; line-height: 1; color: var(--ink); }
-  .ring__of { font-size: 13px; color: var(--dim); margin-top: 3px; line-height: 1; }
+  .ring__num { font-size: 64px; font-weight: 600; letter-spacing: -3.4px; line-height: 1; color: var(--ink); }
+  .ring__of { font-size: 13px; letter-spacing: 0; color: var(--dim); margin-top: 3px; line-height: 1; }
 
   /* ---------- screen 2 ---------- */
   .back { display: inline-flex; align-items: center; gap: 4px; color: var(--sub); font-size: 15px; padding: 4px 6px 4px 0; margin-left: -2px; cursor: pointer; }
   .back svg { width: 17px; height: 17px; }
-  .title { font-size: 30px; font-weight: 600; letter-spacing: -0.9px; line-height: 1.15; margin-top: 14px; color: var(--ink); }
+  .title { font-size: 30px; font-weight: 600; letter-spacing: -1.1px; line-height: 1.15; margin-top: 14px; color: var(--ink); }
   .subtitle { font-size: 13.5px; color: var(--dim); margin-top: 3px; }
   .screen--detail .label { margin-top: 22px; }
-  .screen--detail .card { border-radius: 14px; border-color: var(--stroke-2); }
+  .screen--detail .card { border-radius: 16px; }
   .screen--detail .card + .label { margin-top: 26px; }
 
   .drow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 14px; position: relative; cursor: pointer; }
-  .drow:active { background: #F6F6F8; }
-  .drow__name { flex: 1 1 auto; min-width: 0; font-size: 14.5px; font-weight: 500; letter-spacing: -0.2px; line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; }
-  .drow__age { flex: 0 0 auto; font-size: 13px; font-weight: 500; color: var(--sub); white-space: nowrap; }
-  .drow__count { flex: 0 0 auto; font-size: 14.5px; font-weight: 400; color: var(--dim); }
+  .drow:active { background: #F7F7F9; }
+  .drow__name { flex: 1 1 auto; min-width: 0; font-size: 15px; font-weight: 500; letter-spacing: -0.3px; line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; }
+  .drow__age { flex: 0 0 auto; font-size: 13px; font-weight: 400; letter-spacing: -0.1px; color: var(--sub); white-space: nowrap; }
+  .drow__count { flex: 0 0 auto; font-size: 15px; font-weight: 400; color: var(--sub); }
   .drow .chev { width: 14px; height: 14px; color: var(--chev); }
   .dot-slot { flex: 0 0 14px; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--grey); }
@@ -158,11 +158,11 @@
     <div class="ring" role="img" id="ring" aria-label="">
       <svg viewBox="0 0 196 196" aria-hidden="true">
         <!-- track: thickness ≈4px (inner radius 96% of outer) -->
-        <circle id="ring-track" cx="98" cy="98" fill="none" stroke="#E6E6EB"/>
+        <circle id="ring-track" cx="98" cy="98" fill="none" stroke="#E7E7EC"/>
         <!-- arcs: thickness ≈10px (inner radius 90%), start at 12 o'clock, clockwise; lengths set from DATA -->
         <g transform="rotate(-90 98 98)">
-          <circle id="arc-needs" cx="98" cy="98" fill="none" stroke="#C2352C" pathLength="360" stroke-dasharray="0 360" stroke-dashoffset="0"/>
-          <circle id="arc-watching" cx="98" cy="98" fill="none" stroke="#D98324" pathLength="360" stroke-dasharray="0 360" stroke-dashoffset="0"/>
+          <circle id="arc-needs" cx="98" cy="98" fill="none" stroke="#C4463C" pathLength="360" stroke-dasharray="0 360" stroke-dashoffset="0"/>
+          <circle id="arc-watching" cx="98" cy="98" fill="none" stroke="#DE9231" pathLength="360" stroke-dasharray="0 360" stroke-dashoffset="0"/>
         </g>
       </svg>
       <div class="ring__center">
@@ -337,8 +337,8 @@ function derive() {
 }
 
 function renderRing(d) {
-  // track: inner radius 96% → stroke centred at 98% of R, width 4% of R (≈3.9px)
-  const trackW = RING_R * 0.04, trackR = RING_R - trackW / 2;
+  // track: inner radius 95.5% → width 4.5% of R (≈4.4px), a slightly fuller track
+  const trackW = RING_R * 0.045, trackR = RING_R - trackW / 2;   // inner radius 95.5%
   // arcs: inner radius 90% → stroke centred at 95% of R, width 10% of R (≈9.8px); sits proud of the track
   const arcW = RING_R * 0.10, arcR = RING_R - arcW / 2;
   const t = $("ring-track"); t.setAttribute("r", trackR); t.setAttribute("stroke-width", trackW);
