@@ -199,8 +199,6 @@ async function main() {
   const { shelf, source } = await getShelf();
   const items = shelf.items || [];
   document.getElementById('shelf').innerHTML = groupItems(items).map(groupSectionHTML).join('');
-  document.getElementById('count').textContent =
-    `${items.length} item${items.length === 1 ? '' : 's'} · for ${(shelf.household || []).join(' & ')}`;
   const banner = document.getElementById('banner');
   if (banner) banner.style.display = source === 'demo' ? 'block' : 'none';
 
