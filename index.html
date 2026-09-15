@@ -118,13 +118,6 @@
     letter-spacing: -0.01em;
     line-height: 1.08;
   }
-  .tagline {
-    font-family: var(--serif);
-    font-size: 14px;
-    line-height: 1.25;
-    color: rgba(19,19,19,.63);
-    margin: 6px 0 0;
-  }
   .grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -143,27 +136,21 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 10px;
     padding: 13px 14px;
     text-align: left;
     overflow: hidden;
     touch-action: manipulation;
   }
   .card .label {
-    font-size: 14px;
+    margin-top: auto;
+    font-size: 15px;
     font-weight: 600;
     line-height: 1.2;
     max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-  .card .sub {
-    font-size: 11px;
-    font-weight: 400;
-    color: rgba(19,19,19,.6);
-    line-height: 1.25;
-    overflow-wrap: anywhere;
   }
   .card-app {
     position: relative;
@@ -177,7 +164,7 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(0, 47, 16, 0.12);
   }
-  .card-app > img, .card-app .mono, .card-app .label, .card-app .sub { position: relative; z-index: 1; }
+  .card-app > img, .card-app .mono, .card-app .label { position: relative; z-index: 1; }
   .card-app .remove { z-index: 2; }
   .card-app:active {
     transform: translateY(0);
@@ -188,7 +175,7 @@
     opacity: .92;
     z-index: 5;
   }
-  .card-app > img { width: 46px; height: 46px; object-fit: contain; flex: none; }
+  .card-app > img { width: 64px; height: 64px; object-fit: contain; flex: none; }
   .card:focus-visible { outline: 2px solid var(--green-700); outline-offset: 3px; }
   .card.placeholder {
     border: 2px dashed var(--green-line);
@@ -198,16 +185,16 @@
   }
   /* monogram fallback icon (used by private/link tiles with no image) */
   .mono {
-    width: 46px;
-    height: 46px;
+    width: 64px;
+    height: 64px;
     flex: none;
-    border-radius: 14px;
+    border-radius: 18px;
     background: var(--green);
     color: var(--beige);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 23px;
+    font-size: 30px;
     font-weight: 600;
   }
   /* Keep Add available below a full grid without creating a fifth full row. */
@@ -220,7 +207,7 @@
     border: 1px dashed var(--green-line);
   }
   .card-add:hover { transform: translateY(-2px); background: var(--green-soft); }
-  .card-add .plus { width: 46px; height: 46px; font-size: 38px; font-weight: 300; line-height: 46px; opacity: 0.7; }
+  .card-add .plus { width: 64px; height: 64px; font-size: 38px; font-weight: 300; line-height: 64px; opacity: 0.7; }
   .card-add:nth-child(odd):not(:first-child) {
     grid-column: 1 / -1;
     height: 44px;
@@ -293,20 +280,6 @@
   @media (prefers-reduced-motion: reduce) {
     .card, .remove, .day-sun, .day-halo { transition: none; }
   }
-  @media (display-mode: standalone) {
-    .install-hint { display: none; }
-  }
-  .install-hint {
-    max-width: 480px;
-    margin: 0 auto 24px;
-    padding: 14px 18px;
-    background: var(--green-soft);
-    border-radius: 16px;
-    font-size: 13px;
-    text-align: center;
-    line-height: 1.5;
-  }
-  .install-hint strong { font-weight: 600; }
 </style>
 </head>
 <body>
@@ -316,18 +289,12 @@
       <circle class="day-halo" id="dayHalo" cx="2" cy="46" r="17"/>
       <circle class="day-sun" id="daySun" cx="2" cy="46" r="7"/>
     </svg>
-    <div class="day-labels"><span>5 AM</span><span class="day-now" id="dayNow"></span><span>10 PM</span></div>
+    <div class="day-labels"><span>7 AM</span><span class="day-now" id="dayNow"></span><span>11 PM</span></div>
   </div>
   <header>
     <!-- Header mark intentionally omitted from this layout. -->
     <h1>Eric's Apps</h1>
-    <p class="tagline">illuminating what's flourishing &amp; what needs light</p>
   </header>
-
-  <p class="install-hint">
-    <strong>To install:</strong> tap the menu in Chrome <span aria-hidden="true">⋮</span>
-    then <em>Add to Home Screen</em>.
-  </p>
 
   <!-- Add-app form. Private apps entered here are saved ONLY in this device's
        localStorage — never sent anywhere, never committed to this public repo. -->
@@ -339,10 +306,6 @@
     <div>
       <label for="appUrl">App URL</label>
       <input id="appUrl" type="url" inputmode="url" placeholder="https://my-app.up.railway.app/">
-    </div>
-    <div>
-      <label for="appSub">Tagline (optional)</label>
-      <input id="appSub" type="text" placeholder="my daily brief" maxlength="60">
     </div>
     <div>
       <label for="appIcon">Icon URL (optional)</label>
@@ -365,7 +328,7 @@
   <script>
     // Local clock only; recompute after backgrounding because timers may be throttled.
     (function () {
-      var START = 5 * 60, END = 22 * 60;
+      var START = 7 * 60, END = 23 * 60;
       var sun = document.getElementById('daySun');
       var halo = document.getElementById('dayHalo');
       var label = document.getElementById('dayNow');
@@ -506,10 +469,7 @@
         var label = document.createElement('div');
         label.className = 'label';
         label.textContent = app.name || app.slug || '';
-        var sub = document.createElement('div');
-        sub.className = 'sub';
-        sub.textContent = (app.sub || '') + (external ? '  ↗' : '');
-        a.appendChild(label); a.appendChild(sub);
+        a.appendChild(label);
 
         // Sunlight shares one glass surface; stored tile themes stay untouched.
 
@@ -543,8 +503,7 @@
         a.setAttribute('aria-label', 'Add an app to this device');
         var plus = document.createElement('div'); plus.className = 'plus'; plus.textContent = '+';
         var label = document.createElement('div'); label.className = 'label'; label.textContent = 'Add an app';
-        var sub = document.createElement('div'); sub.className = 'sub'; sub.textContent = 'saved on this device';
-        a.appendChild(plus); a.appendChild(label); a.appendChild(sub);
+        a.appendChild(plus); a.appendChild(label);
         a.addEventListener('click', function (e) { e.preventDefault(); openPanel(); });
         return a;
       }
@@ -702,13 +661,12 @@
         e.preventDefault();
         var name = document.getElementById('appName').value.trim();
         var url = safeUrl(document.getElementById('appUrl').value.trim());
-        var sub = document.getElementById('appSub').value.trim();
         var icon = safeIconSrc(document.getElementById('appIcon').value.trim());
         var err = document.getElementById('addErr');
         if (!name) { err.textContent = 'Please enter a name.'; return; }
         if (!url) { err.textContent = 'Please enter a valid http(s) URL.'; return; }
         var arr = loadPrivate();
-        arr.push({ id: genId(), name: name, url: url, sub: sub, icon: icon || '', kind: 'link' });
+        arr.push({ id: genId(), name: name, url: url, icon: icon || '', kind: 'link' });
         if (!savePrivate(arr)) { err.textContent = 'Could not save (device storage is blocked).'; return; }
         closePanel();
         renderAll();
