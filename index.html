@@ -164,20 +164,32 @@
   .card-app:active {
     transform: translateY(0);
   }
-  .card.dragging {
-    transform: scale(1.06);
-    box-shadow: 0 8px 24px rgba(0,0,0,.45);
-    opacity: .92;
-    z-index: 5;
+  /* Reorder: tiles never select text or pop the link menu on a long press. */
+  .card-app { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  /* Pressed-and-holding cue before the lift (touch only). */
+  .card-app.pressing { scale: .96; transition: scale .35s cubic-bezier(.2,0,0,1); }
+  /* Siblings slide into their new slot (FLIP: translate is set to the old
+     offset, then released under this transition). */
+  .card-app.settle { transition: translate .22s cubic-bezier(.2,0,0,1); }
+  /* The tile being moved stays in the grid as an empty slot; a floating clone
+     follows the finger. */
+  .card-app.gap { opacity: 0; }
+  .card-app.gap .remove { display: none; }
+  .card-app.lifted {
+    position: fixed;
+    margin: 0;
+    z-index: 1000;
+    pointer-events: none;
+    transform: none;
+    scale: 1.06;
+    background: #fffdfa;
+    box-shadow: 0 14px 34px rgba(0, 47, 16, .28), 0 2px 6px rgba(0, 47, 16, .12);
+    transition: scale .18s cubic-bezier(.2,0,0,1), box-shadow .18s ease;
   }
+  .card-app.lifted .remove { display: none; }
+  .card-app.lifted.landing { transition: translate .2s cubic-bezier(.2,0,0,1), scale .2s cubic-bezier(.2,0,0,1), box-shadow .2s ease; scale: 1; box-shadow: 0 0 0 rgba(0,0,0,0); }
   .card-app > img { width: 64px; height: 64px; object-fit: contain; flex: none; }
   .card:focus-visible { outline: 2px solid var(--green-700); outline-offset: 3px; }
-  .card.placeholder {
-    border: 2px dashed var(--green-line);
-    border-radius: 20px;
-    background: transparent;
-    opacity: .4;
-  }
   /* monogram fallback icon (used by private/link tiles with no image) */
   .mono {
     width: 64px;
@@ -512,94 +524,180 @@
         grid.appendChild(addCard());
       }
 
+      // ---- Reorder by long-press (touch) or drag (mouse/pen) ----------------
+      // The pressed tile stays in the grid as an invisible gap; a floating clone
+      // follows the pointer via `translate` (compositor-only, batched per frame).
+      // Slot rectangles are captured once at lift, so the target index comes
+      // from pure geometry (the 11px gutter is a natural dead zone: no flicker).
+      // Displaced siblings slide (FLIP), the clone glides into its slot on
+      // release, and the page auto-scrolls when the pointer nears an edge.
+      var HOLD_MS = 320;          // touch: press this long without moving to lift
+      var SLOP_PX = 10;           // moving further than this during the hold = scroll, not lift
+      var MOUSE_START_PX = 6;     // mouse/pen: lift after this much movement, no hold
+      var EDGE_PX = 72;           // auto-scroll zone at the top/bottom of the viewport
+      var EDGE_MAX_PX = 18;       // max auto-scroll per frame
+
       function cancelPickup() {
         if (!pickup) return;
         clearTimeout(pickup.timer);
+        pickup.tile.classList.remove('pressing');
         pickup = null;
       }
 
-      function moveTile(e) {
-        var tile = dragState.tile;
-        var placeholder = dragState.placeholder;
-        var best = null; var bestDist = Infinity;
-        Array.prototype.forEach.call(grid.children, function (child) {
-          if (child === tile || child === placeholder || !child.dataset.key) return;
-          var r = child.getBoundingClientRect();
-          var dx = e.clientX - (r.left + r.width / 2);
-          var dy = e.clientY - (r.top + r.height / 2);
-          var dist = dx * dx + dy * dy;
-          if (dist < bestDist) { bestDist = dist; best = { child: child, rect: r, dx: dx, dy: dy }; }
+      function tiles() {
+        return Array.prototype.filter.call(grid.children, function (c) { return c.dataset && c.dataset.key; });
+      }
+
+      function measure(list) {
+        var m = {};
+        list.forEach(function (el) { var r = el.getBoundingClientRect(); m[el.dataset.key] = { x: r.left, y: r.top }; });
+        return m;
+      }
+
+      // FLIP: after the DOM moved, offset each moved tile back to where it was and
+      // let the `settle` transition carry it to its new slot.
+      function animateShift(before, list) {
+        list.forEach(function (el) {
+          var was = before[el.dataset.key]; if (!was) return;
+          var now = el.getBoundingClientRect();
+          var dx = was.x - now.left, dy = was.y - now.top;
+          if (!dx && !dy) return;
+          el.classList.remove('settle');
+          el.style.translate = dx + 'px ' + dy + 'px';
+          void el.offsetWidth; // commit the offset before releasing it
+          el.classList.add('settle');
+          el.style.translate = '0px 0px';
+          clearTimeout(el._settleTimer);
+          el._settleTimer = setTimeout(function () { el.classList.remove('settle'); el.style.removeProperty('translate'); }, 260);
         });
-        if (!best) return;
-        var after = Math.abs(best.dy) < best.rect.height / 2 ? best.dx > 0 : best.dy > 0;
-        var before = best.child;
-        if (after) {
-          before = best.child.nextElementSibling;
-          while (before === tile || before === placeholder) before = before.nextElementSibling;
+      }
+
+      function liftTile(tile, pointerId, clientX, clientY) {
+        var rect = tile.getBoundingClientRect();
+        var list = tiles();
+        var slots = list.map(function (el) {
+          var r = el.getBoundingClientRect();
+          return { x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height };
+        });
+        var clone = tile.cloneNode(true);
+        clone.classList.remove('pressing', 'gap', 'settle');
+        clone.classList.add('lifted');
+        clone.removeAttribute('href');
+        clone.style.left = rect.left + 'px';
+        clone.style.top = rect.top + 'px';
+        clone.style.width = rect.width + 'px';
+        clone.style.height = rect.height + 'px';
+        document.body.appendChild(clone);
+        tile.classList.remove('pressing');
+        tile.classList.add('gap');
+        try { navigator.vibrate(20); } catch (_) {}
+        try { tile.setPointerCapture(pointerId); } catch (_) {}
+        dragState = { tile: tile, clone: clone, pointerId: pointerId, slots: slots,
+          index: list.indexOf(tile), originX: rect.left, originY: rect.top,
+          grabDX: clientX - rect.left, grabDY: clientY - rect.top,
+          x: clientX, y: clientY, raf: 0, scrollRaf: 0 };
+        renderDrag();
+      }
+
+      function slotAt(pageX, pageY) {
+        var s = dragState.slots;
+        for (var i = 0; i < s.length; i++) {
+          if (pageX >= s[i].x && pageX <= s[i].x + s[i].w && pageY >= s[i].y && pageY <= s[i].y + s[i].h) return i;
         }
-        var add = grid.querySelector('.card-add');
-        grid.insertBefore(placeholder, before && before !== add ? before : add);
+        return -1;
+      }
+
+      function moveGap(to) {
+        var list = tiles();
+        var from = list.indexOf(dragState.tile);
+        if (to === from || to < 0 || to >= list.length) return;
+        var before = measure(list);
+        var ref = list[to];
+        if (to > from) grid.insertBefore(dragState.tile, ref.nextSibling); else grid.insertBefore(dragState.tile, ref);
+        dragState.index = to;
+        animateShift(before, list);
+      }
+
+      function renderDrag() {
+        dragState.raf = 0;
+        var d = dragState;
+        d.clone.style.translate = (d.x - d.grabDX - d.originX) + 'px ' + (d.y - d.grabDY - d.originY) + 'px';
+        var i = slotAt(d.x + window.scrollX, d.y + window.scrollY);
+        if (i >= 0) moveGap(i);
+      }
+
+      function autoScroll() {
+        var d = dragState;
+        if (!d) return;
+        var step = 0;
+        var h = window.innerHeight;
+        if (d.y < EDGE_PX) step = -EDGE_MAX_PX * (1 - d.y / EDGE_PX);
+        else if (d.y > h - EDGE_PX) step = EDGE_MAX_PX * (1 - (h - d.y) / EDGE_PX);
+        var max = document.documentElement.scrollHeight - h;
+        if (step && ((step < 0 && window.scrollY > 0) || (step > 0 && window.scrollY < max))) {
+          window.scrollBy(0, step);
+          if (!d.raf) d.raf = requestAnimationFrame(renderDrag);
+        }
+        d.scrollRaf = requestAnimationFrame(autoScroll);
       }
 
       function finishDrag(e) {
         if (!dragState || e.pointerId !== dragState.pointerId) return;
-        var tile = dragState.tile;
-        var placeholder = dragState.placeholder;
-        grid.insertBefore(tile, placeholder);
-        placeholder.parentNode.removeChild(placeholder);
-        ['position', 'left', 'top', 'width', 'height', 'margin', 'z-index'].forEach(function (property) {
-          tile.style.removeProperty(property);
-        });
-        tile.classList.remove('dragging');
-        var keys = [];
-        Array.prototype.forEach.call(grid.children, function (child) {
-          if (child.dataset.key) keys.push(child.dataset.key);
-        });
-        saveOrder(keys);
-        suppressClick = true;
+        var d = dragState;
         dragState = null;
+        if (d.raf) cancelAnimationFrame(d.raf);
+        if (d.scrollRaf) cancelAnimationFrame(d.scrollRaf);
+        var keys = tiles().map(function (el) { return el.dataset.key; });
+        saveOrder(keys);
+        // Glide the clone into the gap, then reveal the real tile.
+        var target = d.tile.getBoundingClientRect();
+        d.clone.classList.add('landing');
+        d.clone.style.translate = (target.left - d.originX) + 'px ' + (target.top - d.originY) + 'px';
+        var done = false;
+        var land = function () {
+          if (done) return; done = true;
+          d.tile.classList.remove('gap');
+          if (d.clone.parentNode) d.clone.parentNode.removeChild(d.clone);
+        };
+        d.clone.addEventListener('transitionend', land);
+        setTimeout(land, 260);
+        suppressClick = true;
+        setTimeout(function () { suppressClick = false; }, 400);
       }
 
       grid.addEventListener('pointerdown', function (e) {
         var tile = e.target.closest('.card-app');
-        if (!tile || e.target.closest('.remove')) return;
+        if (!tile || e.target.closest('.remove') || dragState) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
         cancelPickup();
         pickup = { tile: tile, pointerId: e.pointerId, pointerType: e.pointerType,
-          x: e.clientX, y: e.clientY, pointerX: e.clientX, pointerY: e.clientY };
-        pickup.timer = setTimeout(function () {
-          var pending = pickup;
-          pickup = null;
-          if (!pending) return;
-          var rect = pending.tile.getBoundingClientRect();
-          var placeholder = document.createElement('div');
-          placeholder.className = 'card placeholder';
-          placeholder.style.width = rect.width + 'px';
-          placeholder.style.height = rect.height + 'px';
-          grid.insertBefore(placeholder, pending.tile);
-          pending.tile.style.position = 'fixed';
-          pending.tile.style.left = rect.left + 'px';
-          pending.tile.style.top = rect.top + 'px';
-          pending.tile.style.width = rect.width + 'px';
-          pending.tile.style.height = rect.height + 'px';
-          pending.tile.style.margin = '0';
-          pending.tile.style.zIndex = '1000';
-          pending.tile.classList.add('dragging');
-          try { navigator.vibrate(15); } catch (_) {}
-          try { pending.tile.setPointerCapture(pending.pointerId); } catch (_) {}
-          dragState = { tile: pending.tile, placeholder: placeholder, pointerId: pending.pointerId,
-            grabDX: pending.pointerX - rect.left, grabDY: pending.pointerY - rect.top };
-        }, 450);
+          x: e.clientX, y: e.clientY, pointerX: e.clientX, pointerY: e.clientY, timer: 0 };
+        if (e.pointerType === 'touch') {
+          tile.classList.add('pressing');
+          pickup.timer = setTimeout(function () {
+            var pending = pickup;
+            pickup = null;
+            if (!pending) return;
+            liftTile(pending.tile, pending.pointerId, pending.pointerX, pending.pointerY);
+          }, HOLD_MS);
+        }
       });
       document.addEventListener('pointermove', function (e) {
         if (pickup && e.pointerId === pickup.pointerId) {
           pickup.pointerX = e.clientX; pickup.pointerY = e.clientY;
           var dx = e.clientX - pickup.x; var dy = e.clientY - pickup.y;
-          if (dx * dx + dy * dy > 100) cancelPickup();
+          var dist = dx * dx + dy * dy;
+          if (pickup.pointerType === 'touch') {
+            if (dist > SLOP_PX * SLOP_PX) cancelPickup();
+          } else if (dist > MOUSE_START_PX * MOUSE_START_PX) {
+            var p = pickup; pickup = null;
+            liftTile(p.tile, p.pointerId, p.x, p.y);
+          }
         }
         if (dragState && e.pointerId === dragState.pointerId) {
-          dragState.tile.style.left = (e.clientX - dragState.grabDX) + 'px';
-          dragState.tile.style.top = (e.clientY - dragState.grabDY) + 'px';
-          moveTile(e);
+          dragState.x = e.clientX; dragState.y = e.clientY;
+          if (!dragState.raf) dragState.raf = requestAnimationFrame(renderDrag);
+          if (!dragState.scrollRaf) dragState.scrollRaf = requestAnimationFrame(autoScroll);
         }
       });
       document.addEventListener('pointerup', function (e) {
