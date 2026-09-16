@@ -91,24 +91,13 @@
   .day-sun { fill: var(--gold); }
   .day-halo { fill: var(--gold); opacity: .2; }
   .day-labels {
-    display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) 48px;
-    align-items: center;
+    display: flex;
+    justify-content: space-between;
     font-size: 10.5px;
     line-height: 20px;
     font-weight: 500;
     color: rgba(126,95,40,.6);
     white-space: nowrap;
-  }
-  .day-labels > :last-child { text-align: right; }
-  .day-now {
-    color: var(--camel-deep);
-    font-weight: 600;
-    letter-spacing: 1.4px;
-    text-align: center;
-  }
-  @media (max-width: 390px) {
-    .day-now { letter-spacing: .4px; }
   }
   header {
     text-align: left;
@@ -295,7 +284,7 @@
       <circle class="day-halo" id="dayHalo" cx="2" cy="46" r="17"/>
       <circle class="day-sun" id="daySun" cx="2" cy="46" r="7"/>
     </svg>
-    <div class="day-labels"><span>8 AM</span><span class="day-now" id="dayNow"></span><span>11 PM</span></div>
+    <div class="day-labels"><span>8 AM</span><span>11 PM</span></div>
   </div>
   <header>
     <!-- Header mark intentionally omitted from this layout. -->
@@ -337,11 +326,9 @@
       var START = 8 * 60, END = 23 * 60;
       var sun = document.getElementById('daySun');
       var halo = document.getElementById('dayHalo');
-      var label = document.getElementById('dayNow');
       function updateDayArc() {
         var now = new Date();
-        var hours = now.getHours(), minutes = now.getMinutes();
-        var mins = hours * 60 + minutes;
+        var mins = now.getHours() * 60 + now.getMinutes();
         var t = Math.min(1, Math.max(0, (mins - START) / (END - START)));
         var x = 2 + 368 * t;
         var y = 46 - 120 * t + 120 * t * t;
@@ -349,15 +336,6 @@
           dot.setAttribute('cx', x);
           dot.setAttribute('cy', y);
         });
-        var phase = mins < START ? 'BEFORE FIRST LIGHT'
-          : mins < 510 ? 'FIRST LIGHT'
-          : mins < 660 ? 'MORNING'
-          : mins < 840 ? 'MIDDAY'
-          : mins < 1020 ? 'AFTERNOON'
-          : mins < 1170 ? 'GOLDEN HOUR'
-          : mins < 1275 ? 'DUSK'
-          : mins <= END ? 'NIGHTFALL' : 'AFTER DARK';
-        label.textContent = phase;
       }
       updateDayArc();
       setInterval(updateDayArc, 60000);
