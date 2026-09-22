@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  buildSchedule, dayLabel, decodeDataPayload, isClassBookerData, nextOccurrence, parseTimes, parseWeekday,
+  buildSchedule, dayLabel, pruneBooked, decodeDataPayload, isClassBookerData, nextOccurrence, parseTimes, parseWeekday,
   safeHttpsUrl, splitWhen, weekDays,
 } from './app.mjs';
 
@@ -113,4 +113,9 @@ test('day labels never repeat the weekday', () => {
   assert.equal(dayLabel(at(23, 0), today), 'Tomorrow');
   assert.equal(dayLabel(at(24, 0), today), 'Thursday');
   assert.equal(dayLabel(at(30, 0), today), 'Next Wednesday');
+});
+
+test('booked marks drop past dates and junk', () => {
+  const kept = pruneBooked(['wed@2026-09-23', 'mon@2026-09-21', 'thu@2026-09-22', 'nonsense', 42], at(22, 12));
+  assert.deepEqual(kept, ['wed@2026-09-23', 'thu@2026-09-22']);
 });

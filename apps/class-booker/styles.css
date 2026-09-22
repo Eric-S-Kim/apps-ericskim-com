@@ -88,6 +88,22 @@ h1 {
 }
 .hero-go:active { transform: scale(.98); }
 .hero.quiet .hero-go { color: var(--on-accent); background: var(--accent); }
+.hero-actions { display: flex; flex-direction: column; gap: 8px; }
+.hero-go.secondary { color: var(--on-accent); background: transparent; box-shadow: inset 0 0 0 1.5px var(--on-accent); }
+.hero-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border-radius: 999px;
+  color: var(--on-accent);
+  font-size: 15px;
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+}
+.hero-mark:active { transform: scale(.98); }
+.hero-mark[aria-pressed="true"] { color: var(--accent); background: var(--bg); }
 
 /* Week strip */
 .week { display: flex; flex-direction: column; gap: 14px; }
@@ -134,6 +150,7 @@ h1 {
 .day.selected .day-num { border-color: var(--accent); color: var(--on-accent); background: var(--accent); font-weight: 600; }
 .day-dot { width: 6px; height: 6px; border-radius: 50%; }
 .day.has .day-dot { background: var(--accent); }
+.day.has.booked .day-dot { width: auto; height: 6px; background: none; color: var(--accent); font-size: 12px; font-weight: 700; line-height: 6px; }
 
 /* Other classes */
 .later { display: flex; flex-direction: column; gap: 14px; }
@@ -157,6 +174,8 @@ h1 {
 .row-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .row-venue { font-size: 18px; font-weight: 600; line-height: 1.22; letter-spacing: -.01em; overflow-wrap: anywhere; }
 .row-meta { color: var(--muted); font-size: 13px; }
+.row-flag { color: var(--accent); font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.row.current .row-venue, .row.current .row-date { color: var(--accent); }
 .row-go {
   display: flex;
   align-items: center;
