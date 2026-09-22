@@ -264,7 +264,8 @@ function renderCard(occurrence) {
   card.append(element('div', 'kicker', `${DAY_ABBR[date.getDay()]} ${MONTHS[date.getMonth()]} ${date.getDate()} · ${prettyTime(time)}`));
   const body = element('div', 'hero-body');
   body.append(element('h2', 'hero-venue', item.venue));
-  body.append(element('div', 'hero-meta', [item.tag, note].filter(Boolean).join(' · ')));
+  // The title carries the class type now (Eric 2026-09-22: 'cleaner'); only a shortcut's own note shows below it.
+  if (note) body.append(element('div', 'hero-meta', note));
 
   // The studio link can't pre-select a date, so a later date says what to pick instead of promising a booking.
   const direct = soonest || hasDateSlot(item.url);
@@ -358,7 +359,7 @@ function renderRow(occurrence, isCurrent) {
   const when = element('span', 'row-when');
   when.append(element('span', 'row-day', DAY_ABBR[date.getDay()]), element('span', 'row-date', String(date.getDate())));
   const main = element('span', 'row-main');
-  main.append(element('span', 'row-venue', item.venue), element('span', 'row-meta', [prettyTime(time), item.tag].filter(Boolean).join(' · ')));
+  main.append(element('span', 'row-venue', item.venue), element('span', 'row-meta', prettyTime(time)));
   pick.append(when, main);
   pick.addEventListener('click', () => select(occurrence));
   const go = studioLink(item, 'row-go', `${item.action}, ${item.venue}, ${spokenDate(date)}`, date);
