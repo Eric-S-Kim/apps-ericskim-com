@@ -1,93 +1,111 @@
-/* Living Pantry Shelf — "apothecary cockpit" art direction.
-   Warm paper ground, deep botanical green, serif display. Not default-SaaS. */
+/* Pantry Shelf — "Butterfly · Sea glass" (Eric's pick, 2026-09-22).
+   Cloud-balcony header after Revery Architecture's Butterfly tower; light Jost type;
+   soft uneven card corners; one deep-teal ink for actions. Tokens below — restyle here. */
+@font-face {
+  font-family: 'Jost';
+  font-style: normal;
+  font-weight: 300 600;
+  font-display: swap;
+  src: url('./fonts/jost-latin.woff2') format('woff2');
+}
 :root {
-  --paper: #f6f3ea;
-  --ink: #20271f;
-  --green: #2f5d45;
-  --green-deep: #1f3d2e;
-  --gold: #b08433;
-  --line: #d8d0bd;
-  --card: #fffdf7;
-  --muted: #6a6f63;
-  --sold: #9a4a3a;
+  --page: #F2F8F7;       /* sea-glass mist */
+  --sky: #D4EAE7;        /* header sky, closed-shelf pills, thumb ground */
+  --slab: #F9FDFC;       /* cloud balconies */
+  --edge: #98C7C1;       /* balcony outline */
+  --ink: #16322F;        /* text + primary action */
+  --accent: #3E8A83;     /* decorative only (wave, icons) */
+  --accent-text: #2F6F68;/* accent used AS text: 5.6:1 on white */
+  --muted: #5C7572;      /* secondary text: 4.9:1 on white */
+  --card: #FFFFFF;
+  --card-line: #D9EAE7;
+  --shadow: rgba(22, 50, 47, 0.09);
+  --alert: #9A3B2E;      /* banner / error text only */
+  --soldout: #8A4B3C;    /* the one negative state: warm, not brand teal (6.9:1 on white) */
+  --count: #4E6664;      /* counts on the sky pill: 4.9:1 */
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } /* Android Chrome font-boost guard */
 body {
   margin: 0;
-  background: var(--paper);
+  background: var(--page);
   color: var(--ink);
-  font-family: "TT Commons", "Inter", system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
+  font-family: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 400;
+  line-height: 1.4;
 }
-.masthead {
-  border-bottom: 2px solid var(--green-deep);
-  padding: 28px 22px 18px;
-  max-width: 760px; margin: 0 auto;
-}
-.masthead h1 {
-  font-family: Lustria, Georgia, "Times New Roman", serif;
-  font-weight: 400; font-size: 30px; letter-spacing: .2px; margin: 0; color: var(--green-deep);
-}
-.wrap { max-width: 760px; margin: 0 auto; padding: 20px 22px 60px; }
+button, .btn { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 20px 20px 18px;
-  margin: 18px 0;
-  box-shadow: 0 1px 0 rgba(31,61,46,.04), 0 10px 26px -20px rgba(31,61,46,.5);
+/* ---- Header: sky with stacked cloud balconies ---- */
+.sky { background: var(--sky); padding-top: env(safe-area-inset-top, 0px); }
+.sky .clouds { display: block; width: 100%; height: 132px; }
+.sky .clouds polygon { fill: var(--slab); stroke: var(--edge); stroke-width: 1.2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+
+.masthead { max-width: 560px; margin: 0 auto; padding: 22px 20px 2px; }
+.masthead h1 { margin: 0; font-weight: 300; font-size: 44px; line-height: 48px; letter-spacing: -0.02em; color: var(--ink); }
+.wrap { max-width: 560px; margin: 0 auto; padding: 18px 20px 64px; }
+
+/* ---- Shelf sections: closed = soft pill; open = small caps label + wave ---- */
+details.group { margin: 10px 0 0; }
+details.group > summary {
+  display: flex; align-items: center; gap: 12px; cursor: pointer; list-style: none;
+  min-height: 52px; padding: 13px 22px; border-radius: 999px; background: var(--sky);
 }
+details.group > summary::-webkit-details-marker { display: none; }
+.g-name { flex: 1; min-width: 0; font-size: 18px; font-weight: 400; color: var(--ink); }
+.g-wave { display: none; width: 96px; min-width: 0; height: 10px; flex: 0 1 96px; color: var(--accent); }
+.g-count { font-size: 14px; color: var(--count); }
+.g-chev { display: inline-flex; color: var(--ink); transition: transform .15s ease; }
+details.group[open] { margin-top: 26px; }
+details.group[open] > summary { background: transparent; padding: 4px 2px; min-height: 40px; border-radius: 0; }
+details.group[open] .g-name { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; }
+details.group[open] .g-wave { display: block; }
+details.group[open] .g-count { flex: 1; }
+details.group[open] .g-chev { transform: rotate(90deg); color: var(--count); }
+.group-body { display: flex; flex-direction: column; gap: 16px; padding: 12px 0 8px; }
+
+/* ---- Item card: white, soft uneven corners that alternate down the list ---- */
+.card {
+  background: var(--card); border: 1px solid var(--card-line);
+  border-radius: 46px 14px 46px 14px; padding: 22px;
+  box-shadow: 0 18px 40px var(--shadow);
+}
+.group-body .card:nth-child(even) { border-radius: 14px 46px 14px 46px; }
 .head { display: flex; gap: 16px; align-items: flex-start; }
 .head-text { flex: 1; min-width: 0; }
 .thumb {
-  width: 72px; height: 72px; flex: none; border-radius: 10px; object-fit: contain;
-  background: #fff; border: 1px solid var(--line); padding: 4px;
+  width: 58px; height: 58px; flex: none; object-fit: contain; padding: 6px;
+  border-radius: 29px 29px 29px 8px; background: #FFFFFF; border: 1px solid var(--sky);
 }
 .thumb-empty {
   display: flex; align-items: center; justify-content: center;
-  font-family: Lustria, Georgia, serif; font-size: 28px; color: var(--green-deep);
-  background: #e9efe5; border-color: #cdddc7;
+  background: var(--sky); border-color: var(--sky); font-size: 24px; font-weight: 300; color: var(--accent-text);
 }
-.card h2 {
-  font-family: Lustria, Georgia, serif; font-weight: 400; font-size: 21px;
-  margin: 0 0 2px; color: var(--ink);
-}
-.variant {
-  display: inline-block; margin: 6px 0 8px;
-  font-size: 13px; font-weight: 600; color: var(--green-deep);
-  background: #e9efe5; border: 1px solid #cdddc7; border-radius: 999px; padding: 3px 11px;
-}
-/* Simple view: price + status chip, glanceable, no asOf clutter. */
-.simple-line { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.price-short { font-weight: 700; font-size: 15px; color: var(--ink); }
-.chip {
-  font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
-  border: 1px solid var(--line); color: var(--muted); background: #f3efe3;
-}
-.chip.in_stock_snapshot { color: var(--green); background: #e9efe5; border-color: #cdddc7; }
-.chip.snapshot { color: var(--green-deep); background: #eef1e7; border-color: #d8e0cd; }
-.chip.sold_out { color: var(--sold); background: #f6e9e6; border-color: #e3c9c2; }
-.chip.unresolved, .chip.unknown { color: var(--gold); background: #fbf4e2; border-color: #ecd9aa; }
-.why { color: var(--muted); font-size: 14px; font-style: italic; margin: 0 0 12px; }
+.card h2 { margin: 0; font-size: 20px; line-height: 25px; font-weight: 500; letter-spacing: -0.01em; color: var(--ink); overflow-wrap: anywhere; }
+.variant { margin: 3px 0 0; font-size: 14px; line-height: 19px; font-weight: 300; color: var(--muted); }
+.price-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-top: 6px; }
+.price { font-size: 17px; font-weight: 500; color: var(--ink); }
+.soldout { font-size: 15px; font-weight: 500; color: var(--soldout); }
+.price.stale { font-weight: 400; color: var(--muted); }
+.fresh { font-size: 13px; font-weight: 400; color: var(--muted); }
 
-.status { font-size: 13.5px; font-weight: 600; margin: 2px 0 12px; }
-.status.in_stock_snapshot { color: var(--green); }
-.status.sold_out { color: var(--sold); }
-.status.unresolved, .status.unknown { color: var(--gold); }
+.actions { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+button, .btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 12px 18px; border-radius: 999px; cursor: pointer;
+  font-size: 15px; font-weight: 500; text-decoration: none;
+  border: 1px solid var(--ink); background: var(--ink); color: #FFFFFF;
+}
+button.ghost, .btn.ghost { background: transparent; color: var(--ink); font-weight: 400; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.detail-actions button { min-height: 44px; font-size: 14px; }
 
-.rows { border-top: 1px dashed var(--line); padding-top: 12px; }
-.row { display: flex; justify-content: space-between; gap: 14px; font-size: 14px; padding: 3px 0; }
-.row .k { color: var(--muted); }
-.row .v { text-align: right; }
-.asof { color: var(--muted); font-size: 12px; }
-
-/* MB3-style "Show details" disclosure — native <details>, rotating chevron, no toggle JS. */
-details.more { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; }
+/* "Show details" disclosure: a quiet text row, native <details>, no toggle JS. */
+details.more { margin-top: 6px; }
 details.more summary {
-  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none;
-  color: var(--green-deep); font-weight: 600; font-size: 13px;
+  display: flex; align-items: center; gap: 6px; width: 100%; min-height: 44px; cursor: pointer; list-style: none;
+  color: var(--muted); font-size: 13px;
 }
 details.more summary::-webkit-details-marker { display: none; }
 details.more summary svg { transition: transform .15s ease; }
@@ -95,51 +113,25 @@ details.more[open] summary svg { transform: rotate(90deg); }
 details.more summary .lbl-open { display: none; }
 details.more[open] summary .lbl-closed { display: none; }
 details.more[open] summary .lbl-open { display: inline; }
-.more-body { margin-top: 10px; }
-.detail-actions { margin-top: 12px; }
-
-/* Collapsible CATEGORY sections — calm "open to headers, tap to expand" layout.
-   Native <details>, collapsed by default; same chevron idiom as the per-card disclosure. */
-details.group { margin: 16px 0 0; }
-details.group:first-of-type { margin-top: 8px; }
-details.group > summary {
-  display: flex; align-items: center; gap: 11px; cursor: pointer; list-style: none;
-  padding: 14px 16px; background: var(--card); border: 1px solid var(--line);
-  border-radius: 13px; box-shadow: 0 1px 0 rgba(31,61,46,.04), 0 8px 20px -18px rgba(31,61,46,.5);
-}
-details.group > summary::-webkit-details-marker { display: none; }
-details.group[open] > summary { border-radius: 13px 13px 0 0; }
-.g-emoji { font-size: 19px; line-height: 1; }
-.g-name { font-family: Lustria, Georgia, serif; font-size: 18px; color: var(--green-deep); }
-.g-count { margin-left: auto; color: var(--muted); font-size: 13px; font-weight: 600; }
-.g-chev { color: var(--muted); display: inline-flex; transition: transform .15s ease; }
-details.group[open] .g-chev { transform: rotate(90deg); }
-/* Cards sit directly under their header when expanded — lighter so it's not card-in-card. */
-.group-body { border: 1px solid var(--line); border-top: none; border-radius: 0 0 13px 13px;
-  background: #fcfaf3; padding: 2px 14px 12px; }
-.group-body .card { box-shadow: none; margin: 12px 0; }
-
-.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-button, .btn {
-  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
-  border-radius: 10px; padding: 10px 15px; border: 1px solid var(--green-deep);
-  background: var(--green-deep); color: #f6f3ea; text-decoration: none; display: inline-block;
-}
-button.ghost, .btn.ghost { background: transparent; color: var(--green-deep); }
-button:disabled { opacity: .45; cursor: not-allowed; }
-.btn.gold { background: var(--gold); border-color: var(--gold); color: #2a2310; }
-
-.alts { margin-top: 14px; font-size: 13px; color: var(--muted); }
-.alts .alt { padding: 6px 0; border-top: 1px solid var(--line); }
+.more-body { margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--card-line); }
+.why { margin: 0 0 12px; font-size: 14px; font-weight: 300; font-style: italic; color: var(--muted); }
+.row { display: flex; justify-content: space-between; gap: 14px; padding: 3px 0; font-size: 14px; }
+.row .k { color: var(--muted); flex: none; }
+.row .v { text-align: right; overflow-wrap: break-word; min-width: 0; }
+.alts { margin-top: 12px; font-size: 13px; color: var(--muted); }
+.alts .alt { padding: 6px 0; border-top: 1px solid var(--card-line); }
 
 .toast {
-  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
-  background: var(--green-deep); color: #f6f3ea; padding: 11px 16px; border-radius: 10px;
-  font-size: 14px; box-shadow: 0 10px 30px -10px rgba(0,0,0,.5); opacity: 0; pointer-events: none;
-  transition: opacity .18s ease; max-width: 90vw;
+  position: fixed; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  width: max-content; max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 22px; text-align: center;
+  background: var(--ink); color: #FFFFFF; font-size: 14px;
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,.4); opacity: 0; pointer-events: none; transition: opacity .18s ease;
 }
 .toast.show { opacity: 1; }
 .banner {
-  background: #fbf4e2; border: 1px solid var(--gold); color: #6a531c;
-  border-radius: 10px; padding: 12px 14px; margin: 6px 0 4px; font-size: 13.5px;
+  margin: 0 0 8px; padding: 14px 18px; border-radius: 22px;
+  background: var(--card); border: 1px solid var(--edge); color: var(--ink); font-size: 14px;
 }
+.error-card { color: var(--alert); }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

@@ -74,10 +74,19 @@ export function offerMatchesVariant(variant, offerLabel) {
   return true;
 }
 
-// Pick the vendor to feature: first in-stock snapshot by priority, else the first vendor.
+// Pick the vendor to feature. Rank by status so a buyable store is never hidden behind a
+// sold-out one listed first: in-stock > last-bought > unknown > unresolved > sold out.
+// Ties keep the array (priority) order.
+const VENDOR_RANK = { in_stock_snapshot: 0, snapshot: 1, unresolved: 3, sold_out: 4 };
 export function pickVendor(item) {
   const vendors = item.vendors || [];
-  return vendors.find(v => v.status === 'in_stock_snapshot') || vendors[0] || null;
+  let best = null;
+  let bestRank = Infinity;
+  for (const v of vendors) {
+    const r = VENDOR_RANK[v && v.status] ?? 2;
+    if (r < bestRank) { best = v; bestRank = r; }
+  }
+  return best;
 }
 
 // Build the HONEST confidence card for an item + a chosen vendor snapshot.
@@ -124,6 +133,51 @@ export function snapshotStatusShort(status) {
     case 'unresolved':        return 'Unverified';
     default:                  return 'Unverified';
   }
+}
+
+// "2026-06-13" -> "Jun 13" (adds the year only when it differs from `now`'s year).
+// Unparseable input -> null, so callers can simply omit the date rather than show garbage.
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export function shortDate(iso, now = new Date()) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  if (!m) return null;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const base = `${MONTHS[mo - 1]} ${d}`;
+  return y === now.getFullYear() ? base : `${base}, ${y}`;
+}
+
+// One honest line under the price saying how old the snapshot is (label-data-age rule:
+// a price is never shown without its age). Sold-out is rendered separately by the card.
+// Never a bare "In stock": without a dated snapshot there is no stock claim at all.
+export function freshnessShort(status, snap, now = new Date()) {
+  const d = snap ? shortDate(snap.asOf, now) : null;
+  const age = snap ? relativeAge(snap.asOf, now) : null;
+  const tail = age ? ` · ${age}` : '';
+  switch (status) {
+    case 'in_stock_snapshot': return d ? `In stock as of ${d}${tail}` : 'Stock not checked';
+    case 'snapshot':          return d ? `Last bought ${d}${tail}` : 'Purchase date unknown';
+    case 'sold_out':          return d ? `Sold out as of ${d}${tail}` : 'Sold out';
+    default:                  return d ? `Seen ${d} · store not verified` : 'Store not verified';
+  }
+}
+
+// Whole days between an ISO date and `now` (null if unparseable).
+export function ageDays(iso, now = new Date()) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  if (!m) return null;
+  const then = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((today - then) / 86400000);
+}
+
+// Plain-language age once a snapshot is old enough to doubt: null under 2 weeks,
+// then "3 wk ago", then "4 mo ago" (from 60 days).
+export function relativeAge(iso, now = new Date()) {
+  const n = ageDays(iso, now);
+  if (n === null || n < 14) return null;
+  if (n < 60) return `${Math.floor(n / 7)} wk ago`;
+  return `${Math.round(n / 30.44)} mo ago`;
 }
 
 export function teleportLabel(vendor) {
