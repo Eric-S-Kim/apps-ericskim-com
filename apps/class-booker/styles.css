@@ -55,6 +55,31 @@ h1 {
 .label { margin: 0; color: var(--muted); font-size: 11px; letter-spacing: .14em; }
 .label.strong { color: var(--text); }
 
+/* Setup-link confirmation (shown only while a #data= link is waiting for the owner's tap) */
+.import {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid var(--accent);
+  border-radius: 24px;
+  background: var(--surface);
+}
+.import-title { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.02em; }
+.import-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.import-error { margin: 0; color: #ff8a8a; font-size: 14px; }
+.import-actions { display: flex; gap: 10px; }
+.import-go {
+  flex: 1 1 auto;
+  min-height: 48px;
+  border-radius: 999px;
+  color: var(--on-accent);
+  background: var(--accent);
+  font-size: 15px;
+  font-weight: 600;
+}
+.import-cancel { min-height: 48px; padding: 0 20px; border: 1px solid var(--line); border-radius: 999px; font-size: 15px; }
+
 /* Selected class: the one accent moment */
 .hero {
   display: flex;

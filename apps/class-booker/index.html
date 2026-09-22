@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260922-7" />
+  <link rel="stylesheet" href="./styles.css?v=20260922-8" />
 </head>
 <body>
   <main class="wrap">
@@ -20,6 +20,7 @@
       <span class="mark">Class/Booker</span>
       <button id="reset" class="reset" type="button" hidden>Next up</button>
     </header>
+    <section id="import" aria-label="Load classes from a setup link" hidden></section>
     <h1 id="title" aria-live="polite" hidden></h1>
     <section id="hero" aria-label="Selected class" hidden></section>
     <section id="week" class="week" aria-label="Week" hidden></section>
@@ -36,7 +37,7 @@
       Open your private Class Booker setup link on this phone to restore them.
     </section>
   </main>
-  <script type="module" src="./app.mjs?v=20260922-7"></script>
+  <script type="module" src="./app.mjs?v=20260922-8"></script>
   <script>
     (() => {
       if (!('serviceWorker' in navigator)) return;

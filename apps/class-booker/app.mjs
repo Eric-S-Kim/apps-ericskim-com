@@ -43,20 +43,20 @@ export function decodeDataPayload(encoded) {
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
-async function maybeImportFromHash() {
+// A #data= setup link is validated and held until the owner taps Load in the page's own panel. It used to
+// ask with window.confirm(), which Chrome can silently answer "Cancel" in a just-opened in-app browser
+// (Gmail's), so imports failed with no sign on screen.
+function takeImportFromHash() {
   const match = location.hash.match(/^#data=([^&]+)$/);
-  if (!match) return;
-
+  if (!match) return null;
+  history.replaceState(null, '', location.pathname + location.search);
   try {
     const data = decodeDataPayload(match[1]);
     if (!isClassBookerData(data)) throw new Error('invalid class data');
-    if (confirm(`Load ${data.classes.length} private class shortcuts onto this device?`)) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
+    return data;
   } catch (error) {
     console.warn('Class shortcut import failed:', error);
-  } finally {
-    history.replaceState(null, '', location.pathname + location.search);
+    return null;
   }
 }
 
@@ -206,7 +206,7 @@ export function dayLabel(date, today) {
 
 // ---------- view ----------
 // Selection lives in memory only (the URL hash is reserved for the #data= setup import).
-const view = { data: null, key: null, week: null, signature: '' };
+const view = { data: null, key: null, week: null, signature: '', pending: null, importError: false };
 
 // "7-8:45 PM" -> "7–8:45 PM" for display only.
 function prettyTime(time) {
@@ -418,7 +418,46 @@ function resolveView(schedule) {
   return { next, selected, week, isHome };
 }
 
+function renderImportPanel(pending) {
+  const panel = element('div', 'import');
+  const count = pending.classes.length;
+  panel.append(element('h2', 'import-title', `Load ${count} class${count === 1 ? '' : 'es'}?`));
+  const list = element('ul', 'import-list');
+  pending.classes.forEach((item) => list.append(element('li', '', item.venue)));
+  panel.append(list);
+  if (view.importError) panel.append(element('p', 'import-error', 'Couldn’t save on this device. Check that Chrome allows site data, then try again.'));
+  const actions = element('div', 'import-actions');
+  const load = element('button', 'import-go', 'Load classes');
+  load.type = 'button';
+  load.addEventListener('click', () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(pending));
+    } catch (error) {
+      console.warn('Could not save class shortcuts:', error);
+      view.importError = true;
+      render();
+      return;
+    }
+    Object.assign(view, { data: pending, pending: null, importError: false, key: null, week: null });
+    render();
+  });
+  const cancel = element('button', 'import-cancel', 'Cancel');
+  cancel.type = 'button';
+  cancel.addEventListener('click', () => {
+    Object.assign(view, { pending: null, importError: false });
+    render();
+  });
+  actions.append(load, cancel);
+  panel.append(actions);
+  return panel;
+}
+
 function render(now = new Date()) {
+  const importSection = document.getElementById('import');
+  importSection.replaceChildren();
+  importSection.hidden = !view.pending;
+  if (view.pending) importSection.append(renderImportPanel(view.pending));
+
   const title = document.getElementById('title');
   const hero = document.getElementById('hero');
   const weekSection = document.getElementById('week');
@@ -431,7 +470,7 @@ function render(now = new Date()) {
   [hero, weekSection, rows, anytimeRows].forEach((node) => node.replaceChildren());
 
   const data = view.data;
-  empty.hidden = Boolean(data);
+  empty.hidden = Boolean(data) || Boolean(view.pending);
   if (!data) {
     [title, hero, weekSection, later, anytime, reset].forEach((node) => { node.hidden = true; });
     return;
@@ -477,7 +516,8 @@ function refreshIfStale() {
 }
 
 export async function main() {
-  await maybeImportFromHash();
+  const pending = takeImportFromHash();
+  if (pending) Object.assign(view, { pending, importError: false });
   view.data = readStoredData();
   view.key = null;
   view.week = null;
