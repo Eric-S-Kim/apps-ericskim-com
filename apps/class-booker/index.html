@@ -17,14 +17,19 @@
 <body>
   <main class="wrap">
     <header class="top">
-      <span class="mark">CLASS/BOOKER</span>
+      <span class="mark">Class/Booker</span>
+      <button id="reset" class="reset" type="button" hidden>Next up</button>
     </header>
-    <h1 id="title">Next up</h1>
-    <section id="hero" aria-label="Next class"></section>
-    <section id="week" class="week" aria-label="This week" hidden></section>
-    <section id="later" class="later" aria-label="Later classes" hidden>
-      <h2 class="label">LATER</h2>
+    <h1 id="title" aria-live="polite" hidden></h1>
+    <section id="hero" aria-label="Selected class" hidden></section>
+    <section id="week" class="week" aria-label="Week" hidden></section>
+    <section id="later" class="later" hidden>
+      <h2 id="later-label" class="label"></h2>
       <div id="rows"></div>
+    </section>
+    <section id="anytime" class="later" hidden>
+      <h2 class="label">Any time</h2>
+      <div id="anytime-rows"></div>
     </section>
     <section id="empty" class="empty" hidden>
       <strong>Private shortcuts not loaded</strong>

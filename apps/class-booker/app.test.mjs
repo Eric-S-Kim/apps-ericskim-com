@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  decodeDataPayload, isClassBookerData, parseWeekday, planClasses, safeHttpsUrl, splitWhen, weekStrip,
+  buildSchedule, dayLabel, decodeDataPayload, isClassBookerData, nextOccurrence, parseTimes, parseWeekday,
+  safeHttpsUrl, splitWhen, weekDays,
 } from './app.mjs';
 
 const valid = {
@@ -41,10 +42,10 @@ test('decodes base64url setup data', () => {
 test('reads the weekday that leads the when text', () => {
   assert.equal(parseWeekday('Wednesdays 7-8:45 PM · 2 tickets'), 3);
   assert.equal(parseWeekday('Thu 6-7:15 PM · $25 drop-in'), 4);
+  assert.equal(parseWeekday('Tues 6 PM'), 2);
   assert.equal(parseWeekday('Check the schedule'), null);
   assert.equal(parseWeekday('Monthly jam'), null);
   assert.equal(parseWeekday('Saturated colour class'), null);
-  assert.equal(parseWeekday('Tues 6 PM'), 2);
 });
 
 test('splits the time from the note', () => {
@@ -52,37 +53,64 @@ test('splits the time from the note', () => {
   assert.deepEqual(splitWhen('Check the schedule'), { time: 'Check the schedule', note: '' });
 });
 
+test('reads class start and end times', () => {
+  assert.deepEqual(parseTimes('Wednesdays 7-8:45 PM · 2 tickets'), { start: 19 * 60, end: 20 * 60 + 45 });
+  assert.deepEqual(parseTimes('Sat 11-12:30 PM'), { start: 11 * 60, end: 12 * 60 + 30 });
+  assert.deepEqual(parseTimes('Sun 10:15am–11:30am'), { start: 10 * 60 + 15, end: 11 * 60 + 30 });
+  assert.deepEqual(parseTimes('Fri 10 PM-12 AM'), { start: 22 * 60, end: 24 * 60 });
+  assert.deepEqual(parseTimes('Tues 6 PM · $20'), { start: 18 * 60, end: 20 * 60 });
+  assert.equal(parseTimes('Thursdays · $25 drop-in'), null);
+});
+
 const week = [
-  { ...valid.classes[0], id: 'wed', when: 'Wednesdays 7-8:45 PM · 2 tickets' },
-  { ...valid.classes[0], id: 'mon', when: 'Mondays 7-8:30 PM · 2 tickets' },
-  { ...valid.classes[0], id: 'thu', when: 'Thursdays 6-7:15 PM · $25 drop-in' },
+  { ...valid.classes[0], id: 'wed', venue: 'Harbour', when: 'Wednesdays 7-8:45 PM · 2 tickets' },
+  { ...valid.classes[0], id: 'mon', venue: 'Kin', when: 'Mondays 7-8:30 PM · 2 tickets' },
+  { ...valid.classes[0], id: 'thu', venue: 'Northside', when: 'Thursdays 6-7:15 PM · $25 drop-in' },
 ];
+const at = (day, hour, minute = 0) => new Date(2026, 8, day, hour, minute); // September 2026; the 21st is a Monday
 
-test('picks the soonest class as next up and keeps saved order for the rest', () => {
-  const tuesday = new Date(2026, 8, 22, 12);
-  const { next, rest } = planClasses(week, tuesday);
-  assert.equal(next.item.id, 'wed');
-  assert.equal(next.daysUntil, 1);
-  assert.deepEqual(rest.map((entry) => entry.item.id), ['mon', 'thu']);
-  assert.equal(rest[0].date.getDate(), 28);
+test('next up is the soonest class that has not ended', () => {
+  assert.equal(nextOccurrence(buildSchedule(week, at(22, 12))).key, 'wed@2026-09-23');
+  assert.equal(nextOccurrence(buildSchedule(week, at(23, 18))).key, 'wed@2026-09-23'); // before it starts: today
+  assert.equal(nextOccurrence(buildSchedule(week, at(23, 22, 30))).key, 'thu@2026-09-24'); // after it ends: rolls on
+  assert.equal(nextOccurrence(buildSchedule(week, at(27, 12))).key, 'mon@2026-09-28'); // Sunday: next week's Monday
 });
 
-test('a class today is next up', () => {
-  const monday = new Date(2026, 8, 21, 9);
-  assert.equal(planClasses(week, monday).next.item.id, 'mon');
-  assert.equal(planClasses(week, monday).next.daysUntil, 0);
+test('occurrences run in date order and mark each class\'s real next date', () => {
+  const schedule = buildSchedule(week, at(22, 12));
+  const upcoming = schedule.occurrences.filter((occurrence) => !occurrence.past);
+  assert.deepEqual(upcoming.map((occurrence) => occurrence.key),
+    ['wed@2026-09-23', 'thu@2026-09-24', 'mon@2026-09-28', 'wed@2026-09-30', 'thu@2026-10-01']);
+  assert.deepEqual(upcoming.filter((occurrence) => occurrence.soonest).map((occurrence) => occurrence.item.id), ['wed', 'thu', 'mon']);
+  assert.equal(schedule.occurrences.find((occurrence) => occurrence.key === 'mon@2026-09-21').past, true);
 });
 
-test('falls back to the first saved class when no weekday is readable', () => {
-  const { next, rest } = planClasses([valid.classes[0]], new Date(2026, 8, 22));
-  assert.equal(next.item.id, 'example');
-  assert.equal(next.date, null);
-  assert.equal(rest.length, 0);
+test('two classes on one day order by start time', () => {
+  const sameDay = [...week, { ...valid.classes[0], id: 'yoga', when: 'Wed 5:30-6:30 PM' }];
+  const upcoming = buildSchedule(sameDay, at(22, 12)).occurrences.filter((occurrence) => !occurrence.past);
+  assert.deepEqual(upcoming.slice(0, 2).map((occurrence) => occurrence.item.id), ['yoga', 'wed']);
 });
 
-test('week strip runs Monday to Sunday and marks class days', () => {
-  const days = weekStrip(week, new Date(2026, 8, 22));
-  assert.deepEqual(days.map((day) => day.date.getDate()), [21, 22, 23, 24, 25, 26, 27]);
-  assert.deepEqual(days.map((day) => day.hasClass), [true, false, true, true, false, false, false]);
-  assert.equal(days.findIndex((day) => day.isToday), 1);
+test('undated classes are kept apart from the calendar', () => {
+  const schedule = buildSchedule([...week, valid.classes[0]], at(22, 12));
+  assert.deepEqual(schedule.undated.map(({ item }) => item.id), ['example']);
+  assert.equal(schedule.occurrences.some((occurrence) => occurrence.item.id === 'example'), false);
+});
+
+test('week days mark today, past days and bookable days', () => {
+  const schedule = buildSchedule(week, at(22, 12));
+  const thisWeek = weekDays(schedule, 0);
+  assert.deepEqual(thisWeek.map((day) => day.date.getDate()), [21, 22, 23, 24, 25, 26, 27]);
+  assert.deepEqual(thisWeek.map((day) => day.classes.length), [0, 0, 1, 1, 0, 0, 0]); // Monday's class is over
+  assert.deepEqual(thisWeek.map((day) => day.isPast), [true, false, false, false, false, false, false]);
+  assert.equal(thisWeek.findIndex((day) => day.isToday), 1);
+  assert.deepEqual(weekDays(schedule, 1).map((day) => day.classes.length), [1, 0, 1, 1, 0, 0, 0]);
+});
+
+test('day labels never repeat the weekday', () => {
+  const today = at(22, 12);
+  assert.equal(dayLabel(at(22, 0), today), 'Today');
+  assert.equal(dayLabel(at(23, 0), today), 'Tomorrow');
+  assert.equal(dayLabel(at(24, 0), today), 'Thursday');
+  assert.equal(dayLabel(at(30, 0), today), 'Next Wednesday');
 });

@@ -73,6 +73,10 @@ const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const WEEKS_AHEAD = 1; // this week + next week; studios rarely open booking further out
+const DEFAULT_CLASS_MINUTES = 120;
+const DAY_MS = 86400000;
 
 // "Wednesdays 7-8:45 PM · 2 tickets" -> 3 (Date#getDay numbering); null when the text doesn't lead with a weekday.
 export function parseWeekday(when) {
@@ -87,6 +91,34 @@ export function splitWhen(when) {
   return { time: time.trim(), note: rest.join(' · ') };
 }
 
+const RANGE = /(\d{1,2})(?::(\d{2}))?\s*(?:([ap])\.?m\.?)?\s*(?:-|–|—|to)\s*(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?/i;
+const SINGLE = /(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?/i;
+
+function toMinutes(hour, minute, meridiem) {
+  return (Number(hour) % 12 + (meridiem.toLowerCase() === 'p' ? 12 : 0)) * 60 + Number(minute || 0);
+}
+
+// "7-8:45 PM" -> { start: 1140, end: 1245 } (minutes after midnight); a lone "7 PM" gets a 2-hour class; null if no clock time.
+export function parseTimes(text) {
+  const range = RANGE.exec(text || '');
+  if (range) {
+    const endMeridiem = range[6];
+    let startMeridiem = range[3];
+    if (!startMeridiem) {
+      const flips = Number(range[1]) % 12 > Number(range[4]) % 12; // "11-12:30 PM" starts in the morning
+      startMeridiem = flips ? (endMeridiem.toLowerCase() === 'p' ? 'a' : 'p') : endMeridiem;
+    }
+    const start = toMinutes(range[1], range[2], startMeridiem);
+    let end = toMinutes(range[4], range[5], endMeridiem);
+    if (end <= start) end += 24 * 60;
+    return { start, end };
+  }
+  const single = SINGLE.exec(text || '');
+  if (!single) return null;
+  const start = toMinutes(single[1], single[2], single[3]);
+  return { start, end: start + DEFAULT_CLASS_MINUTES };
+}
+
 function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
@@ -95,39 +127,71 @@ function addDays(date, days) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 }
 
-// Next-up = the soonest weekly class from today (today counts); ties and unparsed entries keep the saved order.
-export function planClasses(classes, now = new Date()) {
+function dateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// Every dated class occurrence from this Monday through the end of next week, in time order. A class is
+// "past" once its day is gone or today's end time has passed; "soonest" marks each class's next real date.
+export function buildSchedule(classes, now = new Date(), weeksAhead = WEEKS_AHEAD) {
   const today = startOfDay(now);
-  const planned = classes.map((item, order) => {
+  const monday = addDays(today, -((today.getDay() + 6) % 7));
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const occurrences = [];
+  const undated = [];
+
+  classes.forEach((item, order) => {
     const weekday = parseWeekday(item.when);
-    if (weekday === null) return { item, order, weekday, daysUntil: null, date: null };
-    const daysUntil = (weekday - today.getDay() + 7) % 7;
-    return { item, order, weekday, daysUntil, date: addDays(today, daysUntil) };
+    if (weekday === null) {
+      undated.push({ item, order });
+      return;
+    }
+    const times = parseTimes(item.when);
+    for (let week = 0; week <= weeksAhead; week += 1) {
+      const date = addDays(monday, week * 7 + (weekday + 6) % 7);
+      const dayDiff = Math.round((date - today) / DAY_MS);
+      const past = dayDiff < 0 || (dayDiff === 0 && times !== null && nowMinutes >= times.end);
+      occurrences.push({ key: `${item.id}@${dateKey(date)}`, item, order, date, week, weekday, dayDiff, times, past });
+    }
   });
-  const dated = planned.filter((entry) => entry.daysUntil !== null);
-  const next = dated.length
-    ? dated.reduce((best, entry) => (entry.daysUntil < best.daysUntil ? entry : best))
-    : planned[0];
-  return { next, rest: planned.filter((entry) => entry !== next) };
+
+  occurrences.sort((a, b) => a.date - b.date
+    || (a.times ? a.times.start : 0) - (b.times ? b.times.start : 0)
+    || a.order - b.order);
+  const seen = new Set();
+  occurrences.forEach((occurrence) => {
+    occurrence.soonest = !occurrence.past && !seen.has(occurrence.item.id);
+    if (occurrence.soonest) seen.add(occurrence.item.id);
+  });
+  return { occurrences, undated, monday, today };
 }
 
-// Monday-first week containing today, with the weekdays that hold a class marked.
-export function weekStrip(classes, now = new Date()) {
-  const today = startOfDay(now);
-  const todayIndex = (today.getDay() + 6) % 7;
-  const monday = addDays(today, -todayIndex);
-  const classDays = new Set(classes.map((item) => parseWeekday(item.when)).filter((day) => day !== null));
+export function nextOccurrence(schedule) {
+  return schedule.occurrences.find((occurrence) => !occurrence.past) || null;
+}
+
+export function weekDays(schedule, week) {
+  const start = addDays(schedule.monday, week * 7);
   return Array.from({ length: 7 }, (_, index) => {
-    const date = addDays(monday, index);
-    return { date, isToday: index === todayIndex, hasClass: classDays.has(date.getDay()) };
+    const date = addDays(start, index);
+    const key = dateKey(date);
+    const classes = schedule.occurrences.filter((occurrence) => !occurrence.past && dateKey(occurrence.date) === key);
+    return { date, classes, isToday: key === dateKey(schedule.today), isPast: date < schedule.today };
   });
 }
 
-function relativeLabel(daysUntil, weekday) {
-  if (daysUntil === 0) return 'Today';
-  if (daysUntil === 1) return 'Tomorrow';
-  return DAY_FULL[weekday];
+export function dayLabel(date, today) {
+  const diff = Math.round((startOfDay(date) - startOfDay(today)) / DAY_MS);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff >= 2 && diff <= 6) return DAY_FULL[date.getDay()];
+  if (diff >= 7 && diff <= 13) return `Next ${DAY_FULL[date.getDay()]}`;
+  return `${DAY_ABBR[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]}`;
 }
+
+// ---------- view ----------
+// Selection lives in memory only (the URL hash is reserved for the #data= setup import).
+const view = { data: null, key: null, week: null, signature: '' };
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -136,7 +200,7 @@ function element(tag, className, text) {
   return node;
 }
 
-function arrowIcon(diagonal) {
+function icon(kind) {
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
   svg.setAttribute('width', '16');
@@ -145,7 +209,12 @@ function arrowIcon(diagonal) {
   svg.setAttribute('fill', 'none');
   svg.setAttribute('aria-hidden', 'true');
   const path = document.createElementNS(ns, 'path');
-  path.setAttribute('d', diagonal ? 'M5 15 L15 5 M7 5 H15 V13' : 'M3 10 H16 M11 5 L16 10 L11 15');
+  path.setAttribute('d', {
+    arrow: 'M3 10 H16 M11 5 L16 10 L11 15',
+    out: 'M5 15 L15 5 M7 5 H15 V13',
+    prev: 'M12 4 L6 10 L12 16',
+    next: 'M8 4 L14 10 L8 16',
+  }[kind]);
   path.setAttribute('stroke', 'currentColor');
   path.setAttribute('stroke-width', '2');
   path.setAttribute('stroke-linecap', 'round');
@@ -154,66 +223,99 @@ function arrowIcon(diagonal) {
   return svg;
 }
 
-function bookingLink(item, className) {
+function studioLink(item, className, label) {
   const link = element('a', className);
   link.href = safeHttpsUrl(item.url);
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
+  link.setAttribute('aria-label', `${label} (opens the studio site)`);
   return link;
 }
 
-function metaLine(item) {
-  const { time, note } = splitWhen(item.when);
-  return [item.tag, time, note].filter(Boolean).join(' · ');
+function spokenDate(date) {
+  return `${DAY_FULL[date.getDay()]} ${MONTHS_FULL[date.getMonth()]} ${date.getDate()}`;
 }
 
-function renderHero({ item, daysUntil, weekday, date }) {
-  const hero = bookingLink(item, 'hero');
-  const kicker = element('div', 'kicker');
-  kicker.append(element('span', '', date
-    ? `${relativeLabel(daysUntil, weekday)} · ${DAY_ABBR[weekday]} ${date.getDate()}`
-    : item.tag));
-  kicker.append(element('span', '', item.chip));
-
+function renderCard(occurrence) {
+  const { item, date, soonest } = occurrence;
+  const { time, note } = splitWhen(item.when);
+  const card = element('div', 'hero');
+  card.append(element('div', 'kicker', `${MONTHS[date.getMonth()]} ${date.getDate()} · ${time}`));
   const body = element('div', 'hero-body');
   body.append(element('h2', 'hero-venue', item.venue));
-  body.append(element('div', 'hero-meta', metaLine(item)));
-
-  const go = element('span', 'hero-go', item.action);
-  go.append(arrowIcon(false));
-  hero.append(kicker, body, go);
-  return hero;
+  body.append(element('div', 'hero-meta', [item.tag, note].filter(Boolean).join(' · ')));
+  // The studio link can't pre-select a date, so a later date says what to pick instead of promising a booking.
+  const label = soonest ? item.action : `Open schedule · pick ${DAY_ABBR[date.getDay()]} ${date.getDate()}`;
+  const go = studioLink(item, 'hero-go', `${label}, ${item.venue}, ${spokenDate(date)}`);
+  go.append(element('span', '', label), icon(soonest ? 'arrow' : 'out'));
+  card.append(body, go);
+  return card;
 }
 
-function renderRow({ item, weekday, date }) {
-  const row = bookingLink(item, 'row');
-  const when = element('div', 'row-when');
-  when.append(element('span', 'row-day', date ? DAY_ABBR[weekday] : item.chip));
-  if (date) when.append(element('span', 'row-date', String(date.getDate())));
-
-  const main = element('div', 'row-main');
-  main.append(element('div', 'row-venue', item.venue));
-  main.append(element('div', 'row-meta', metaLine(item)));
-
-  const go = element('span', 'row-go');
-  go.append(arrowIcon(true));
-  row.append(when, main, go);
-  return row;
+function renderUndatedCard(item) {
+  const card = element('div', 'hero');
+  card.append(element('div', 'kicker', item.tag));
+  const body = element('div', 'hero-body');
+  body.append(element('h2', 'hero-venue', item.venue));
+  body.append(element('div', 'hero-meta', item.when));
+  const go = studioLink(item, 'hero-go', `${item.action}, ${item.venue}`);
+  go.append(element('span', '', item.action), icon('arrow'));
+  card.append(body, go);
+  return card;
 }
 
-function renderWeek(classes, now) {
-  const days = weekStrip(classes, now);
+function renderRestCard(week) {
+  const card = element('div', 'hero quiet');
+  const body = element('div', 'hero-body');
+  body.append(element('h2', 'hero-venue', 'Nothing left this week'));
+  card.append(body);
+  if (week < WEEKS_AHEAD) {
+    const next = element('button', 'hero-go');
+    next.type = 'button';
+    next.append(element('span', '', 'See next week'), icon('arrow'));
+    next.addEventListener('click', () => goToWeek(week + 1));
+    card.append(next);
+  }
+  return card;
+}
+
+function renderWeek(schedule, week, selected) {
+  const days = weekDays(schedule, week);
   const first = days[0].date;
   const last = days[6].date;
   const range = first.getMonth() === last.getMonth()
     ? `${MONTHS[first.getMonth()]} ${first.getDate()}–${last.getDate()}`
-    : `${MONTHS[first.getMonth()]} ${first.getDate()}–${MONTHS[last.getMonth()]} ${last.getDate()}`;
+    : `${MONTHS[first.getMonth()]} ${first.getDate()} – ${MONTHS[last.getMonth()]} ${last.getDate()}`;
 
   const head = element('div', 'week-head');
-  head.append(element('h2', 'label', 'This week'), element('span', 'label', range));
+  const title = element('div', 'week-title');
+  title.append(element('h2', 'label strong', week === 0 ? 'This week' : 'Next week'), element('span', 'label', range));
+  const nav = element('div', 'week-nav');
+  [['prev', week - 1, 'Previous week'], ['next', week + 1, 'Next week']].forEach(([kind, target, label]) => {
+    const button = element('button', 'nav-btn');
+    button.type = 'button';
+    button.setAttribute('aria-label', label);
+    button.disabled = target < 0 || target > WEEKS_AHEAD;
+    button.append(icon(kind));
+    button.addEventListener('click', () => goToWeek(target));
+    nav.append(button);
+  });
+  head.append(title, nav);
+
   const strip = element('div', 'days');
-  days.forEach(({ date, isToday, hasClass }) => {
-    const day = element('div', `day${isToday ? ' today' : ''}${hasClass ? ' has' : ''}`);
+  days.forEach(({ date, classes, isToday, isPast }) => {
+    const bookable = classes.length > 0;
+    const isSelected = bookable && selected && classes.some((occurrence) => occurrence.key === selected.key);
+    const state = `${isToday ? ' today' : ''}${isPast ? ' past' : ''}${bookable ? ' has' : ''}${isSelected ? ' selected' : ''}`;
+    const day = element(bookable ? 'button' : 'div', `day${state}`);
+    if (bookable) {
+      day.type = 'button';
+      day.setAttribute('aria-pressed', String(Boolean(isSelected)));
+      day.setAttribute('aria-label', `${spokenDate(date)}${isToday ? ', today' : ''}: ${classes.map((c) => c.item.venue).join(', ')}`);
+      day.addEventListener('click', () => select(classes[0]));
+    } else {
+      day.setAttribute('aria-hidden', 'true');
+    }
     day.append(element('span', 'day-name', DAY_ABBR[date.getDay()][0]));
     day.append(element('span', 'day-num', String(date.getDate())));
     day.append(element('span', 'day-dot'));
@@ -222,40 +324,139 @@ function renderWeek(classes, now) {
   return [head, strip];
 }
 
-function render(data, now = new Date()) {
+function renderRow(occurrence) {
+  const { item, date } = occurrence;
+  const { time } = splitWhen(item.when);
+  const row = element('div', 'row');
+  const pick = element('button', 'row-select');
+  pick.type = 'button';
+  pick.setAttribute('aria-label', `Show ${item.venue}, ${spokenDate(date)}`);
+  const when = element('span', 'row-when');
+  when.append(element('span', 'row-day', DAY_ABBR[date.getDay()]), element('span', 'row-date', String(date.getDate())));
+  const main = element('span', 'row-main');
+  main.append(element('span', 'row-venue', item.venue), element('span', 'row-meta', [time, item.tag].filter(Boolean).join(' · ')));
+  pick.append(when, main);
+  pick.addEventListener('click', () => select(occurrence));
+  const go = studioLink(item, 'row-go', `${item.action}, ${item.venue}`);
+  go.append(icon('out'));
+  row.append(pick, go);
+  return row;
+}
+
+function renderUndatedRow(item) {
+  const row = element('div', 'row');
+  const link = studioLink(item, 'row-select', `${item.action}, ${item.venue}`);
+  const when = element('span', 'row-when');
+  when.append(element('span', 'row-day', item.chip));
+  const main = element('span', 'row-main');
+  main.append(element('span', 'row-venue', item.venue), element('span', 'row-meta', [item.tag, item.when].join(' · ')));
+  link.append(when, main);
+  const go = element('span', 'row-go');
+  go.setAttribute('aria-hidden', 'true');
+  go.append(icon('out'));
+  row.append(link, go);
+  return row;
+}
+
+function select(occurrence) {
+  view.key = occurrence.key;
+  view.week = occurrence.week;
+  render();
+}
+
+function goToWeek(week) {
+  if (week < 0 || week > WEEKS_AHEAD) return;
+  const schedule = buildSchedule(view.data.classes);
+  const first = schedule.occurrences.find((occurrence) => occurrence.week === week && !occurrence.past);
+  view.key = first ? first.key : null;
+  view.week = week;
+  render();
+}
+
+function resetView() {
+  view.key = null;
+  view.week = null;
+  render();
+}
+
+function resolveView(schedule) {
+  const next = nextOccurrence(schedule);
+  let selected = view.key
+    ? schedule.occurrences.find((occurrence) => occurrence.key === view.key && !occurrence.past) || null
+    : null;
+  if (view.key && !selected) {
+    view.key = null; // the chosen class has ended; fall back to what's next
+    view.week = null;
+  }
+  if (!view.key && view.week === null) selected = next;
+  const week = view.week !== null ? view.week : (selected ? selected.week : 0);
+  const isHome = selected === next && (!next || week === next.week);
+  return { next, selected, week, isHome };
+}
+
+function render(now = new Date()) {
+  const title = document.getElementById('title');
   const hero = document.getElementById('hero');
-  const week = document.getElementById('week');
+  const weekSection = document.getElementById('week');
   const later = document.getElementById('later');
   const rows = document.getElementById('rows');
+  const anytime = document.getElementById('anytime');
+  const anytimeRows = document.getElementById('anytime-rows');
+  const reset = document.getElementById('reset');
   const empty = document.getElementById('empty');
-  document.getElementById('title').hidden = !data;
-  hero.hidden = !data;
-  hero.replaceChildren();
-  week.replaceChildren();
-  rows.replaceChildren();
+  [hero, weekSection, rows, anytimeRows].forEach((node) => node.replaceChildren());
 
+  const data = view.data;
+  empty.hidden = Boolean(data);
   if (!data) {
-    empty.hidden = false;
-    week.hidden = true;
-    later.hidden = true;
+    [title, hero, weekSection, later, anytime, reset].forEach((node) => { node.hidden = true; });
     return;
   }
 
-  empty.hidden = true;
-  const { next, rest } = planClasses(data.classes, now);
-  hero.append(renderHero(next));
+  const schedule = buildSchedule(data.classes, now);
+  const { selected, week, isHome } = resolveView(schedule);
+  const hasDated = schedule.occurrences.length > 0;
+  view.signature = signature(schedule);
 
-  const hasWeekdays = data.classes.some((item) => parseWeekday(item.when) !== null);
-  week.hidden = !hasWeekdays;
-  if (hasWeekdays) week.append(...renderWeek(data.classes, now));
+  hero.hidden = false;
+  reset.hidden = isHome || !hasDated;
+  title.hidden = !hasDated || !selected; // the rest card already says the week is done
+  weekSection.hidden = !hasDated;
 
-  later.hidden = rest.length === 0;
-  rest.forEach((entry) => rows.append(renderRow(entry)));
+  if (!hasDated) {
+    hero.append(renderUndatedCard(schedule.undated[0].item));
+  } else {
+    if (selected) title.textContent = dayLabel(selected.date, schedule.today);
+    hero.append(selected ? renderCard(selected) : renderRestCard(week));
+    weekSection.append(...renderWeek(schedule, week, selected));
+  }
+
+  const others = schedule.occurrences.filter((occurrence) => occurrence.week === week && !occurrence.past && occurrence !== selected);
+  later.hidden = !hasDated || others.length === 0;
+  document.getElementById('later-label').textContent = week === 0 ? 'Also this week' : 'Also next week';
+  others.forEach((occurrence) => rows.append(renderRow(occurrence)));
+
+  const undated = hasDated ? schedule.undated : schedule.undated.slice(1);
+  anytime.hidden = undated.length === 0;
+  undated.forEach(({ item }) => anytimeRows.append(renderUndatedRow(item)));
+}
+
+// Redraw only when time actually changed what's on screen (a new day, or a class ending).
+function signature(schedule) {
+  return `${dateKey(schedule.today)}|${schedule.occurrences.map((occurrence) => (occurrence.past ? 1 : 0)).join('')}`;
+}
+
+function refreshIfStale() {
+  if (!view.data) return;
+  if (signature(buildSchedule(view.data.classes)) !== view.signature) render();
 }
 
 export async function main() {
   await maybeImportFromHash();
-  render(readStoredData());
+  view.data = readStoredData();
+  view.key = null;
+  view.week = null;
+  render();
 }
 
 if (typeof document !== 'undefined') {
@@ -265,4 +466,9 @@ if (typeof document !== 'undefined') {
   });
   start();
   window.addEventListener('hashchange', start);
+  document.getElementById('reset').addEventListener('click', resetView);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshIfStale();
+  });
+  setInterval(refreshIfStale, 60000);
 }
