@@ -206,36 +206,7 @@ export function dayLabel(date, today) {
 
 // ---------- view ----------
 // Selection lives in memory only (the URL hash is reserved for the #data= setup import).
-const view = { data: null, key: null, week: null, signature: '', booked: new Set() };
-
-// "I'm booked" marks are the owner's own note (the app can't see studio bookings); kept on this device only.
-export const BOOKED_KEY = 'class-booker-booked-v1';
-
-// Keys look like "<id>@YYYY-MM-DD"; dates before today are dropped so the list can't grow forever.
-export function pruneBooked(keys, today) {
-  const cutoff = dateKey(today);
-  return keys.filter((key) => typeof key === 'string' && /@\d{4}-\d{2}-\d{2}$/.test(key) && key.slice(-10) >= cutoff);
-}
-
-function readBooked(today) {
-  try {
-    const keys = JSON.parse(localStorage.getItem(BOOKED_KEY) || '[]');
-    return new Set(Array.isArray(keys) ? pruneBooked(keys, today) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function toggleBooked(key) {
-  if (view.booked.has(key)) view.booked.delete(key);
-  else view.booked.add(key);
-  try {
-    localStorage.setItem(BOOKED_KEY, JSON.stringify(pruneBooked([...view.booked], new Date())));
-  } catch (error) {
-    console.warn('Could not save the booked mark:', error);
-  }
-  render();
-}
+const view = { data: null, key: null, week: null, signature: '' };
 
 // "7-8:45 PM" -> "7–8:45 PM" for display only.
 function prettyTime(time) {
@@ -263,8 +234,6 @@ function icon(kind) {
     out: 'M5 15 L15 5 M7 5 H15 V13',
     prev: 'M12 4 L6 10 L12 16',
     next: 'M8 4 L14 10 L8 16',
-    ring: 'M10 3 A7 7 0 1 1 9.99 3 Z',
-    check: 'M4.5 10.5 L8.5 14.5 L15.5 6',
   }[kind]);
   path.setAttribute('stroke', 'currentColor');
   path.setAttribute('stroke-width', '2');
@@ -288,10 +257,9 @@ function spokenDate(date) {
 }
 
 function renderCard(occurrence) {
-  const { item, date, soonest, key } = occurrence;
-  const booked = view.booked.has(key);
+  const { item, date, soonest } = occurrence;
   const { time, note } = splitWhen(item.when);
-  const card = element('div', `hero${booked ? ' booked' : ''}`);
+  const card = element('div', 'hero');
   // Headline carries the relative day ("Tomorrow"); the kicker carries the calendar date and time.
   card.append(element('div', 'kicker', `${DAY_ABBR[date.getDay()]} ${MONTHS[date.getMonth()]} ${date.getDate()} · ${prettyTime(time)}`));
   const body = element('div', 'hero-body');
@@ -300,21 +268,10 @@ function renderCard(occurrence) {
 
   // The studio link can't pre-select a date, so a later date says what to pick instead of promising a booking.
   const direct = soonest || hasDateSlot(item.url);
-  let label = direct ? item.action : `Open schedule · pick ${DAY_ABBR[date.getDay()]} ${date.getDate()}`;
-  if (booked) label = 'Studio page';
-  const go = studioLink(item, `hero-go${booked ? ' secondary' : ''}`, `${label}, ${item.venue}, ${spokenDate(date)}`, date);
-  go.append(element('span', '', label), icon(direct && !booked ? 'arrow' : 'out'));
-
-  const mark = element('button', 'hero-mark');
-  mark.type = 'button';
-  mark.setAttribute('aria-pressed', String(booked));
-  mark.setAttribute('aria-label', booked ? `Booked for ${spokenDate(date)}. Tap to undo.` : `Mark ${spokenDate(date)} as booked`);
-  mark.append(icon(booked ? 'check' : 'ring'), element('span', '', booked ? 'Booked' : 'Mark as booked'));
-  mark.addEventListener('click', () => toggleBooked(key));
-
-  const actions = element('div', 'hero-actions');
-  actions.append(go, mark);
-  card.append(body, actions);
+  const label = direct ? item.action : `Open schedule · pick ${DAY_ABBR[date.getDay()]} ${date.getDate()}`;
+  const go = studioLink(item, 'hero-go', `${label}, ${item.venue}, ${spokenDate(date)}`, date);
+  go.append(element('span', '', label), icon(direct ? 'arrow' : 'out'));
+  card.append(body, go);
   return card;
 }
 
@@ -372,39 +329,36 @@ function renderWeek(schedule, week, selected) {
   days.forEach(({ date, classes, isToday, isPast }) => {
     const bookable = classes.length > 0;
     const isSelected = bookable && selected && classes.some((occurrence) => occurrence.key === selected.key);
-    const allBooked = bookable && classes.every((occurrence) => view.booked.has(occurrence.key));
-    const state = `${isToday ? ' today' : ''}${isPast ? ' past' : ''}${bookable ? ' has' : ''}${isSelected ? ' selected' : ''}${allBooked ? ' booked' : ''}`;
+    const state = `${isToday ? ' today' : ''}${isPast ? ' past' : ''}${bookable ? ' has' : ''}${isSelected ? ' selected' : ''}`;
     const day = element(bookable ? 'button' : 'div', `day${state}`);
     if (bookable) {
       day.type = 'button';
       day.setAttribute('aria-pressed', String(Boolean(isSelected)));
-      day.setAttribute('aria-label', `${spokenDate(date)}${isToday ? ', today' : ''}: ${classes.map((c) => c.item.venue).join(', ')}${allBooked ? ', booked' : ''}`);
+      day.setAttribute('aria-label', `${spokenDate(date)}${isToday ? ', today' : ''}: ${classes.map((c) => c.item.venue).join(', ')}`);
       day.addEventListener('click', () => select(classes[0]));
     } else {
       day.setAttribute('aria-hidden', 'true');
     }
     day.append(element('span', 'day-name', DAY_ABBR[date.getDay()][0]));
     day.append(element('span', 'day-num', String(date.getDate())));
-    day.append(element('span', 'day-dot', allBooked ? '✓' : undefined));
+    day.append(element('span', 'day-dot'));
     strip.append(day);
   });
   return [head, strip];
 }
 
 function renderRow(occurrence, isCurrent) {
-  const { item, date, key } = occurrence;
-  const booked = view.booked.has(key);
+  const { item, date } = occurrence;
   const { time } = splitWhen(item.when);
-  const row = element('div', `row${isCurrent ? ' current' : ''}${booked ? ' booked' : ''}`);
+  const row = element('div', `row${isCurrent ? ' current' : ''}`);
   const pick = element('button', 'row-select');
   pick.type = 'button';
-  pick.setAttribute('aria-label', `Show ${item.venue}, ${spokenDate(date)}${booked ? ', booked' : ''}`);
+  pick.setAttribute('aria-label', `Show ${item.venue}, ${spokenDate(date)}`);
   if (isCurrent) pick.setAttribute('aria-current', 'true');
   const when = element('span', 'row-when');
   when.append(element('span', 'row-day', DAY_ABBR[date.getDay()]), element('span', 'row-date', String(date.getDate())));
   const main = element('span', 'row-main');
   main.append(element('span', 'row-venue', item.venue), element('span', 'row-meta', [prettyTime(time), item.tag].filter(Boolean).join(' · ')));
-  if (booked) main.append(element('span', 'row-flag', '✓ Booked'));
   pick.append(when, main);
   pick.addEventListener('click', () => select(occurrence));
   const go = studioLink(item, 'row-go', `${item.action}, ${item.venue}, ${spokenDate(date)}`, date);
@@ -525,7 +479,6 @@ function refreshIfStale() {
 export async function main() {
   await maybeImportFromHash();
   view.data = readStoredData();
-  view.booked = readBooked(new Date());
   view.key = null;
   view.week = null;
   render();
