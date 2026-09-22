@@ -107,8 +107,10 @@ exploration sets.
 
 # Chief of Staff — meerkat sentinel
 
-`chief-of-staff-meerkat-master-1024.png` is the master for the Chief of Staff
+`chief-of-staff-meerkat-nosquare-1024.png` is the master for the Chief of Staff
 launcher tile. The deployed file is `apps/chief-of-staff/icon-any-192.png`.
+`chief-of-staff-meerkat-master-1024.png` is the original square version it was cut
+from (see "No tan square" below).
 
 That deployed path is device-referenced — it is listed in `protected-assets.json`
 and is the exact URL in the `cos-private-board` row of `cos-phone-sync/device-tiles.json`
@@ -152,6 +154,18 @@ transparent side margins), then flattening onto the panel's own sampled colour
 `#D49856` so the tile is fully opaque with no alpha fringe at any size. The crop is
 1134x1184, so squaring it stretches the artwork about 4% horizontally — invisible
 at tile size and preferable to transparent side strips.
+
+## No tan square (2026-09-22)
+
+Eric asked for the tile without the tan square: sun, meerkat and mound only, with
+the tile's own cream showing around them, like the other borderless tiles. The
+`nosquare` master is the square master with the flat `#D49856` ground made
+transparent — flood-filled from the edges only, so the similar tan of the meerkat's
+body (enclosed by the sun) is untouched — and the anti-aliased rim re-alphaed by
+un-mixing each rim pixel against the ground toward the nearest palette colour
+(sun orange, mound brown, shadow, outline). The 192px tile is a straight Lanczos
+resize of it. The deployed icon now carries alpha, which reverses the earlier
+"fully opaque" choice on purpose.
 
 Known mismatch, deliberately not changed: the tile's stored `borderColor` /
 `glowColor` in `device-tiles.json` are still red (`#cc2222`), chosen for the old
