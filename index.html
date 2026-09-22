@@ -477,6 +477,7 @@
           rm.textContent = '×';
           var doRemove = function (e) {
             e.preventDefault(); e.stopPropagation();
+            if (app.rid) dismissRid(app.rid); // a registry tile removed here stays removed
             // remove by stable id when present; fall back to url+name for legacy entries
             var arr = loadPrivate().filter(function (x) {
               return app.id ? x.id !== app.id : !(x.url === app.url && x.name === app.name);
@@ -797,6 +798,82 @@
         savePrivate(existing);
       }
 
+      // Remote tile sync (2026-09-22): the owner's private config service holds the canonical
+      // tile list, so a tile's name/icon/link changes on the next open with no setup link to tap.
+      // The service URL + read key live only in this device's localStorage (installed once), never
+      // in this public page; no key, offline or a bad answer changes nothing. A registry tile is
+      // matched by its registry id (rid), or by exact url on first sync, and keeps its device id
+      // (so its place in the order survives). Tiles the registry doesn't list are never touched, and
+      // a registry tile removed on this device with × stays removed (DKEY).
+      var RKEY = 'ericsapps-remote-config-v1';
+      var DKEY = 'eric-apps-dismissed-v1';
+      var SYNC_FIELDS = ['rid', 'name', 'url', 'sub', 'icon', 'labelColor', 'borderColor', 'glowColor'];
+      function remoteSettings() {
+        try {
+          var v = JSON.parse(localStorage.getItem(RKEY));
+          var base = v && safeUrl(v.url);
+          if (!base || base.indexOf('https:') !== 0 || typeof v.key !== 'string' || v.key.length < 32) return null;
+          return { base: base.charAt(base.length - 1) === '/' ? base : base + '/', key: v.key };
+        } catch (_) { return null; }
+      }
+      function loadDismissed() {
+        try { var v = JSON.parse(localStorage.getItem(DKEY)); return Array.isArray(v) ? v : []; }
+        catch (_) { return []; }
+      }
+      function dismissRid(rid) {
+        var d = loadDismissed();
+        if (d.indexOf(rid) < 0) d.push(rid);
+        try { localStorage.setItem(DKEY, JSON.stringify(d.slice(-200))); } catch (_) {}
+      }
+      function cleanRemoteTile(t) {
+        if (!t || typeof t.rid !== 'string' || !/^[a-z0-9-]{1,40}$/.test(t.rid)) return null;
+        var u = safeUrl(t.url);
+        if (!u) return null;
+        return { rid: t.rid, name: String(t.name || 'App').slice(0, 40), url: u, sub: String(t.sub || '').slice(0, 60),
+          icon: safeIconSrc(t.icon) || '', labelColor: safeColor(t.labelColor) || '',
+          borderColor: safeColor(t.borderColor) || '', glowColor: safeColor(t.glowColor) || '' };
+      }
+      function mergeRemoteTiles(existing, remote, dismissed) {
+        var changed = false;
+        remote.forEach(function (r) {
+          var hit = null;
+          existing.forEach(function (e) { if (!hit && e.rid === r.rid) hit = e; });
+          if (!hit) existing.forEach(function (e) { if (!hit && !e.rid && e.url === r.url) hit = e; });
+          if (!hit) {
+            if (dismissed.indexOf(r.rid) >= 0) return;
+            hit = { id: genId(), kind: 'link' };
+            existing.push(hit);
+            changed = true;
+          }
+          SYNC_FIELDS.forEach(function (f) { if (hit[f] !== r[f]) { hit[f] = r[f]; changed = true; } });
+        });
+        return changed;
+      }
+      var syncing = false;
+      function syncRemoteTiles() {
+        var s = remoteSettings();
+        if (!s || syncing || typeof fetch !== 'function') return;
+        syncing = true;
+        var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+        var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 5000);
+        fetch(s.base + 'v1/tiles', { headers: { Authorization: 'Bearer ' + s.key }, cache: 'no-store',
+          signal: ctrl ? ctrl.signal : undefined })
+          .then(function (res) { return res.ok ? res.json() : null; })
+          .then(function (body) {
+            if (!body || !Array.isArray(body.tiles)) return;
+            var remote = body.tiles.slice(0, 50).map(cleanRemoteTile).filter(Boolean);
+            if (!remote.length) return;
+            var existing = loadPrivate();
+            if (!mergeRemoteTiles(existing, remote, loadDismissed()) || !savePrivate(existing)) return;
+            if (!dragState && !pickup) renderAll(); // mid-drag: saved now, drawn on the next render
+          })
+          .catch(function () {})
+          .then(function () { clearTimeout(timer); syncing = false; });
+      }
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') syncRemoteTiles();
+      });
+
       // Load public apps, then render public + private + the add tile.
       (async function () {
         importSeed(); // honor a one-tap setup link before first render
@@ -810,6 +887,7 @@
           publicApps = [];
         }
         renderAll();
+        syncRemoteTiles();
       })();
     })();
   </script>
