@@ -60,6 +60,60 @@ function takeImportFromHash() {
   }
 }
 
+// Remote config (2026-09-22): the private class list is fetched on open from the owner's config service,
+// so updates need no link or tap. The service URL and read key live only in this device's localStorage
+// (installed once), never in this public repo. No key, offline, slow or invalid answer: keep the stored list.
+export const REMOTE_KEY = 'ericsapps-remote-config-v1';
+const REMOTE_NAME = 'class-booker';
+const REMOTE_TIMEOUT_MS = 5000;
+
+export function readRemoteSettings(raw) {
+  try {
+    const value = JSON.parse(raw || 'null');
+    const base = value && safeHttpsUrl(value.url);
+    if (!base || typeof value.key !== 'string' || value.key.length < 32) return null;
+    return { base: base.endsWith('/') ? base : `${base}/`, key: value.key };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchRemoteData() {
+  let settings = null;
+  try { settings = readRemoteSettings(localStorage.getItem(REMOTE_KEY)); } catch { /* storage blocked */ }
+  if (!settings || typeof fetch !== 'function') return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REMOTE_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${settings.base}v1/${REMOTE_NAME}`, {
+      headers: { Authorization: `Bearer ${settings.key}` },
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return isClassBookerData(data) ? data : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+let remoteInFlight = null;
+function syncRemote() {
+  if (remoteInFlight) return remoteInFlight;
+  remoteInFlight = fetchRemoteData().then((data) => {
+    if (!data || view.pending) return;
+    const next = JSON.stringify(data);
+    if (next === JSON.stringify(view.data)) return;
+    try { localStorage.setItem(STORAGE_KEY, next); } catch { /* still show it this session */ }
+    Object.assign(view, { data, key: null, week: null });
+    render();
+  }).finally(() => { remoteInFlight = null; });
+  return remoteInFlight;
+}
+
 function readStoredData() {
   try {
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
@@ -523,6 +577,7 @@ export async function main() {
   view.key = null;
   view.week = null;
   render();
+  syncRemote();
 }
 
 if (typeof document !== 'undefined') {
@@ -534,7 +589,10 @@ if (typeof document !== 'undefined') {
   window.addEventListener('hashchange', start);
   document.getElementById('reset').addEventListener('click', resetView);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') refreshIfStale();
+    if (document.visibilityState === 'visible') {
+      refreshIfStale();
+      syncRemote();
+    }
   });
   setInterval(refreshIfStale, 60000);
 }

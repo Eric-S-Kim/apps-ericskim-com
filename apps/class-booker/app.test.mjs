@@ -126,3 +126,13 @@ test('dated shortcut links open the chosen class date', () => {
   assert.equal(bookingUrl('javascript:alert(1)//{date}', at(24, 0)), null);
   assert.equal(isClassBookerData({ ...valid, classes: [{ ...valid.classes[0], url: template }] }), true);
 });
+
+test('remote settings need an https url and a long key; anything else keeps the stored list', async () => {
+  const { readRemoteSettings } = await import('./app.mjs');
+  const key = 'k'.repeat(48);
+  assert.deepEqual(readRemoteSettings(JSON.stringify({ url: 'https://config.example', key })), { base: 'https://config.example/', key });
+  assert.equal(readRemoteSettings(JSON.stringify({ url: 'http://config.example', key })), null);
+  assert.equal(readRemoteSettings(JSON.stringify({ url: 'https://config.example', key: 'short' })), null);
+  assert.equal(readRemoteSettings(null), null);
+  assert.equal(readRemoteSettings('not json'), null);
+});
