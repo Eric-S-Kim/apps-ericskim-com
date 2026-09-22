@@ -166,6 +166,21 @@ export function buildSchedule(classes, now = new Date(), weeksAhead = WEEKS_AHEA
   return { occurrences, undated, monday, today };
 }
 
+// A shortcut URL may carry a {date} placeholder (raw or percent-encoded) where the studio's page accepts a
+// class date, e.g. ".../free-movement-studio#123456-{date}". It is filled with the chosen class's YYYY-MM-DD;
+// with no date the placeholder is dropped, and the studio page falls back to its own default.
+const DATE_TOKEN = /\{date\}|%7Bdate%7D/gi;
+
+export function hasDateSlot(url) {
+  return typeof url === 'string' && /\{date\}|%7Bdate%7D/i.test(url);
+}
+
+export function bookingUrl(url, date) {
+  const safe = safeHttpsUrl(url);
+  if (!safe) return null;
+  return safe.replace(DATE_TOKEN, date ? dateKey(date) : '');
+}
+
 export function nextOccurrence(schedule) {
   return schedule.occurrences.find((occurrence) => !occurrence.past) || null;
 }
@@ -259,9 +274,9 @@ function icon(kind) {
   return svg;
 }
 
-function studioLink(item, className, label) {
+function studioLink(item, className, label, date = null) {
   const link = element('a', className);
-  link.href = safeHttpsUrl(item.url);
+  link.href = bookingUrl(item.url, date);
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.setAttribute('aria-label', `${label} (opens the studio site)`);
@@ -284,10 +299,11 @@ function renderCard(occurrence) {
   body.append(element('div', 'hero-meta', [item.tag, note].filter(Boolean).join(' · ')));
 
   // The studio link can't pre-select a date, so a later date says what to pick instead of promising a booking.
-  let label = soonest ? item.action : `Open schedule · pick ${DAY_ABBR[date.getDay()]} ${date.getDate()}`;
+  const direct = soonest || hasDateSlot(item.url);
+  let label = direct ? item.action : `Open schedule · pick ${DAY_ABBR[date.getDay()]} ${date.getDate()}`;
   if (booked) label = 'Studio page';
-  const go = studioLink(item, `hero-go${booked ? ' secondary' : ''}`, `${label}, ${item.venue}, ${spokenDate(date)}`);
-  go.append(element('span', '', label), icon(soonest && !booked ? 'arrow' : 'out'));
+  const go = studioLink(item, `hero-go${booked ? ' secondary' : ''}`, `${label}, ${item.venue}, ${spokenDate(date)}`, date);
+  go.append(element('span', '', label), icon(direct && !booked ? 'arrow' : 'out'));
 
   const mark = element('button', 'hero-mark');
   mark.type = 'button';
@@ -391,7 +407,7 @@ function renderRow(occurrence, isCurrent) {
   if (booked) main.append(element('span', 'row-flag', '✓ Booked'));
   pick.append(when, main);
   pick.addEventListener('click', () => select(occurrence));
-  const go = studioLink(item, 'row-go', `${item.action}, ${item.venue}`);
+  const go = studioLink(item, 'row-go', `${item.action}, ${item.venue}, ${spokenDate(date)}`, date);
   go.append(icon('out'));
   row.append(pick, go);
   return row;

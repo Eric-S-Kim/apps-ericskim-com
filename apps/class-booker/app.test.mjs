@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  buildSchedule, dayLabel, pruneBooked, decodeDataPayload, isClassBookerData, nextOccurrence, parseTimes, parseWeekday,
+  bookingUrl, buildSchedule, dayLabel, hasDateSlot, pruneBooked, decodeDataPayload, isClassBookerData, nextOccurrence, parseTimes, parseWeekday,
   safeHttpsUrl, splitWhen, weekDays,
 } from './app.mjs';
 
@@ -118,4 +118,16 @@ test('day labels never repeat the weekday', () => {
 test('booked marks drop past dates and junk', () => {
   const kept = pruneBooked(['wed@2026-09-23', 'mon@2026-09-21', 'thu@2026-09-22', 'nonsense', 42], at(22, 12));
   assert.deepEqual(kept, ['wed@2026-09-23', 'thu@2026-09-22']);
+});
+
+test('dated shortcut links open the chosen class date', () => {
+  const template = 'https://studio.example/classes/free-movement#123456-{date}';
+  assert.equal(hasDateSlot(template), true);
+  assert.equal(hasDateSlot('https://studio.example/schedule'), false);
+  assert.equal(bookingUrl(template, at(24, 0)), 'https://studio.example/classes/free-movement#123456-2026-09-24');
+  assert.equal(bookingUrl('https://studio.example/s?d=%7Bdate%7D', at(30, 0)), 'https://studio.example/s?d=2026-09-30');
+  assert.equal(bookingUrl(template, null), 'https://studio.example/classes/free-movement#123456-');
+  assert.equal(bookingUrl('https://studio.example/schedule', at(24, 0)), 'https://studio.example/schedule');
+  assert.equal(bookingUrl('javascript:alert(1)//{date}', at(24, 0)), null);
+  assert.equal(isClassBookerData({ ...valid, classes: [{ ...valid.classes[0], url: template }] }), true);
 });
