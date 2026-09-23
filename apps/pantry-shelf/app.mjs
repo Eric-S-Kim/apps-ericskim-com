@@ -12,7 +12,9 @@ import {
   snapshotStatusShort,
   isShelfPayload,
   isTrustedShelfFetchUrl,
-} from './adapters.mjs';
+  parseHash,
+  itemLink,
+} from './adapters.mjs?v=13'; // build tag: bump with sw.js CACHE + index.html (a test checks they agree)
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -36,9 +38,9 @@ function toast(msg) {
   clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2400);
 }
 
-async function copy(text, label) {
-  try { await navigator.clipboard.writeText(text); toast(`${label} copied — paste into a Claude session.`); }
-  catch { window.prompt(`${label} — copy this into Claude:`, text); }
+async function copy(text, label, done = `${label} copied — paste into a Claude session.`) {
+  try { await navigator.clipboard.writeText(text); toast(done); }
+  catch { window.prompt(`${label} — copy this:`, text); }
 }
 
 // Each card is calm by default: 6 always-visible facts (image · name · variant · price ·
@@ -92,11 +94,12 @@ function cardHTML(item) {
   const altBlock = alts ? `<div class="alts"><strong>Other vendors:</strong>${alts}</div>` : '';
   const detailActions =
     `<button class="ghost" data-verify="${esc(item.id)}">Ask Claude to verify stock &amp; price</button>` +
-    (status !== 'sold_out' ? `<button class="ghost" data-hunt="${esc(item.id)}">Ask Claude to find it elsewhere</button>` : '');
+    (status !== 'sold_out' ? `<button class="ghost" data-hunt="${esc(item.id)}">Ask Claude to find it elsewhere</button>` : '') +
+    `<button class="ghost" data-link="${esc(item.id)}">Copy link to this item</button>`;
   const chev = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 4 10 8 6 12"></polyline></svg>';
 
   return `
-    <article class="card">
+    <article class="card" data-item="${esc(item.id)}">
       <div class="head">
         ${img}
         <div class="head-text">
@@ -166,33 +169,67 @@ async function fetchShelfFromSource(url) {
   return data;
 }
 
-async function maybeImportFromHash() {
-  const hash = location.hash || '';
-  const dataM = hash.match(/[#&]data=([^&]+)/);
-  const fetchM = hash.match(/[#&]fetch=([^&]+)/);
-  if (!dataM && !fetchM) return;
+// A setup link (#data= / #fetch=) is validated and HELD until the owner taps Load in the
+// page's own panel. It used to ask with window.confirm(), which Chrome can silently answer
+// "Cancel" in a just-opened in-app browser (Gmail's), so a load could fail with no sign.
+const view = { pending: null, importError: false, source: null };
+
+async function takeImport(intent) {
+  history.replaceState(null, '', location.pathname + location.search); // drop the hash; no re-import on refresh
   try {
     let data = null;
     let sourceUrl = null;
-    if (dataM) {
-      data = JSON.parse(b64urlDecode(dataM[1]));
+    if (intent.kind === 'data') {
+      data = JSON.parse(b64urlDecode(intent.value));
     } else {
-      sourceUrl = decodeURIComponent(fetchM[1]);
+      sourceUrl = intent.value;
       data = await fetchShelfFromSource(sourceUrl);
     }
     if (!isShelfPayload(data)) throw new Error('not a shelf');
-    if (confirm(`Load your shelf (${data.items.length} items) onto THIS device? It stays only here.`)) {
-      localStorage.setItem(LS_KEY, JSON.stringify(data));
-      if (sourceUrl) localStorage.setItem(LS_SOURCE_KEY, sourceUrl);
-    }
+    return { data, sourceUrl };
   } catch (e) {
     console.warn('Shelf import failed:', e);
+    toast('That shelf link didn’t load. Your shelf is unchanged.');
+    return null;
   }
-  history.replaceState(null, '', location.pathname + location.search); // drop the hash; no re-import on refresh
+}
+
+function renderImportPanel() {
+  const box = document.getElementById('import');
+  const p = view.pending;
+  box.hidden = !p;
+  showBanner();
+  if (!p) { box.innerHTML = ''; return; }
+  const n = p.data.items.length;
+  const groups = groupItems(p.data.items).map((g) => `<li>${esc(g.group)} · ${g.items.length}</li>`).join('');
+  box.innerHTML = `
+    <h2 class="import-title">Load your shelf (${n} item${n === 1 ? '' : 's'}) onto this phone?</h2>
+    <ul class="import-list">${groups}</ul>
+    ${view.importError ? '<p class="import-error">Couldn’t save on this phone. Check that Chrome allows site data, then try again.</p>' : ''}
+    <div class="import-actions">
+      <button type="button" data-import="load">Load shelf</button>
+      <button type="button" class="ghost" data-import="cancel">Cancel</button>
+    </div>`;
+}
+
+function acceptImport() {
+  const p = view.pending;
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(p.data));
+    if (p.sourceUrl) localStorage.setItem(LS_SOURCE_KEY, p.sourceUrl);
+  } catch (e) {
+    console.warn('Could not save the shelf:', e);
+    view.importError = true;
+    renderImportPanel();
+    return;
+  }
+  Object.assign(view, { pending: null, importError: false });
+  renderImportPanel();
+  renderShelf(p.data, 'device');
+  toast('Shelf loaded.');
 }
 
 async function getShelf() {
-  await maybeImportFromHash();
   const sourceUrl = localStorage.getItem(LS_SOURCE_KEY);
   if (sourceUrl) {
     if (isTrustedShelfFetchUrl(sourceUrl)) {
@@ -224,23 +261,71 @@ document.addEventListener('error', (e) => {
   el.replaceWith(tile);
 }, true);
 
+let byId = {};
+
+function renderShelf(shelf, source) {
+  const items = shelf.items || [];
+  byId = Object.fromEntries(items.map(i => [i.id, i]));
+  document.getElementById('shelf').innerHTML = groupItems(items).map(groupSectionHTML).join('');
+  view.source = source;
+  showBanner();
+}
+
+// The demo hint shows only on the demo shelf, and not while the Load panel is already asking.
+function showBanner() {
+  const banner = document.getElementById('banner');
+  if (banner) banner.style.display = view.source === 'demo' && !view.pending ? 'block' : 'none';
+}
+
+// #item=<id> (a saved link or an NFC sticker): open just that item's section and bring its
+// card into view. Every other section stays as it was (closed by default).
+function jumpToItem(id) {
+  history.replaceState(null, '', location.pathname + location.search); // a second tap of the same link still jumps
+  const card = [...document.querySelectorAll('article[data-item]')].find((a) => a.dataset.item === id);
+  if (!card) { toast('That item isn’t on this shelf anymore.'); return; }
+  const group = card.closest('details.group');
+  if (group) group.open = true;
+  card.scrollIntoView({ block: 'center' });
+  card.classList.remove('flash');
+  void card.offsetWidth; // restart the highlight if the same card is jumped to twice
+  card.classList.add('flash');
+  clearTimeout(jumpToItem._t); jumpToItem._t = setTimeout(() => card.classList.remove('flash'), 1800);
+}
+
+async function handleHash() {
+  const intent = parseHash(location.hash);
+  if (!intent) return;
+  if (intent.kind === 'item') { jumpToItem(intent.value); return; }
+  const pending = await takeImport(intent);
+  if (pending) {
+    Object.assign(view, { pending, importError: false });
+    renderImportPanel();
+    document.getElementById('import').scrollIntoView({ block: 'start' });
+  }
+}
+
 async function main() {
   const { shelf, source } = await getShelf();
-  const items = shelf.items || [];
-  document.getElementById('shelf').innerHTML = groupItems(items).map(groupSectionHTML).join('');
-  const banner = document.getElementById('banner');
-  if (banner) banner.style.display = source === 'demo' ? 'block' : 'none';
+  renderShelf(shelf, source);
 
-  const byId = Object.fromEntries(items.map(i => [i.id, i]));
-  document.getElementById('shelf').addEventListener('click', (e) => {
+  document.addEventListener('click', (e) => {
     // closest(): a tap can land on the arrow icon inside a button, not the button itself.
-    const btn = e.target.closest('[data-verify],[data-hunt]');
+    const btn = e.target.closest('[data-verify],[data-hunt],[data-link],[data-import]');
     if (!btn) return;
     const v = btn.getAttribute('data-verify');
     const h = btn.getAttribute('data-hunt');
+    const l = btn.getAttribute('data-link');
+    const imp = btn.getAttribute('data-import');
     if (v) copy(buildVerifyPrompt(byId[v], pickVendor(byId[v])), 'Verify prompt');
     if (h) copy(huntPrompt(byId[h]), 'Hunt prompt');
+    if (l) copy(itemLink(location.href, l), 'Item link', 'Item link copied.');
+    if (imp === 'load' && view.pending) acceptImport();
+    if (imp === 'cancel') { Object.assign(view, { pending: null, importError: false }); renderImportPanel(); }
   });
+
+  // An NFC tap or saved link while the app is already open only changes the hash.
+  window.addEventListener('hashchange', () => { handleHash(); });
+  await handleHash();
 }
 
 main().catch(err => {

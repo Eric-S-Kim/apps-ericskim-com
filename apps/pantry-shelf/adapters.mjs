@@ -243,3 +243,25 @@ export function groupEmoji(group) {
     'Home & Cleaning': '🧹',
   })[group] || '📦';
 }
+
+// What a URL hash asks for. `#data=` (inline shelf) and `#fetch=` (secret-gist source) are
+// setup links that must be confirmed in the page; `#item=<id>` jumps to one item (a saved
+// link or an NFC sticker on the shelf). Anything else = nothing to do.
+export function parseHash(hash) {
+  const m = String(hash || '').match(/[#&](data|fetch|item)=([^&]+)/);
+  if (!m) return null;
+  if (m[1] === 'data') return { kind: 'data', value: m[2] };
+  try {
+    return { kind: m[1], value: decodeURIComponent(m[2]) };
+  } catch {
+    return null;
+  }
+}
+
+// The link that opens the app straight at one item (see parseHash).
+export function itemLink(pageUrl, id) {
+  const u = new URL(pageUrl);
+  u.search = '';
+  u.hash = `item=${encodeURIComponent(id)}`;
+  return u.toString();
+}

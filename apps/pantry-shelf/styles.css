@@ -134,4 +134,22 @@ details.more[open] summary .lbl-open { display: inline; }
 }
 .error-card { color: var(--alert); }
 
+/* Setup-link confirmation: shown only while a #data= / #fetch= link waits for the owner's tap. */
+.import {
+  display: flex; flex-direction: column; gap: 14px; margin: 0 0 12px; padding: 22px;
+  background: var(--card); border: 1px solid var(--edge); border-radius: 46px 14px 46px 14px;
+  box-shadow: 0 18px 40px var(--shadow);
+}
+.import[hidden] { display: none; }
+.import-title { margin: 0; font-size: 20px; line-height: 25px; font-weight: 500; color: var(--ink); }
+.import-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.import-error { margin: 0; color: var(--alert); font-size: 14px; }
+.import-actions { display: flex; gap: 10px; }
+.import-actions button:first-child { flex: 1 1 auto; }
+
+/* #item= jump: a brief ring on the card the link pointed at. */
+.card.flash { animation: flash 1.8s ease-out; }
+@keyframes flash { 0%, 35% { box-shadow: 0 0 0 3px var(--accent), 0 18px 40px var(--shadow); } 100% { box-shadow: 0 18px 40px var(--shadow); } }
+@media (prefers-reduced-motion: reduce) { .card.flash { animation: none; outline: 3px solid var(--accent); outline-offset: 2px; } }
+
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
