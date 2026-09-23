@@ -206,6 +206,9 @@ a.row-go:active { background: var(--surface); }
 }
 .empty strong { display: block; margin-bottom: 6px; color: var(--text); font-size: 18px; font-weight: 600; }
 
+/* Tap delight overlay (delight.mjs): above everything, never takes a tap */
+.fx-layer { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
