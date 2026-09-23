@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import {
   bookingUrl, buildSchedule, dayLabel, hasDateSlot, decodeDataPayload, isClassBookerData, nextOccurrence, parseTimes, parseWeekday,
-  safeHttpsUrl, splitWhen, weekDays,
+  remoteFromHash, safeHttpsUrl, splitWhen, weekDays,
 } from './app.mjs';
 
 const valid = {
@@ -135,4 +135,19 @@ test('remote settings need an https url and a long key; anything else keeps the 
   assert.equal(readRemoteSettings(JSON.stringify({ url: 'https://config.example', key: 'short' })), null);
   assert.equal(readRemoteSettings(null), null);
   assert.equal(readRemoteSettings('not json'), null);
+});
+
+test('remoteFromHash: a store tile sets up the private list once; a different service is refused', () => {
+  const enc = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  const key = 'k'.repeat(40);
+  const mine = { url: 'https://config.example', key };
+  assert.equal(remoteFromHash(`#remote=${enc(mine)}`, null), JSON.stringify({ url: 'https://config.example/', key }));
+  const stored = JSON.stringify({ url: 'https://config.example/', key: 'o'.repeat(40) });
+  assert.equal(remoteFromHash(`#remote=${enc(mine)}`, stored), JSON.stringify({ url: 'https://config.example/', key }));
+  assert.equal(remoteFromHash(`#remote=${enc({ url: 'https://evil.example', key })}`, stored), null);
+  assert.equal(remoteFromHash(`#remote=${enc({ url: 'http://config.example', key })}`, null), null);
+  assert.equal(remoteFromHash(`#remote=${enc({ url: 'https://config.example', key: 'short' })}`, null), null);
+  assert.equal(remoteFromHash('#remote=not*base64', null), null);
+  assert.equal(remoteFromHash('#data=abc', null), null);
+  assert.equal(remoteFromHash('', null), null);
 });

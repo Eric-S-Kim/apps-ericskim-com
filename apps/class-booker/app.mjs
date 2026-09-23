@@ -78,6 +78,21 @@ export function readRemoteSettings(raw) {
   }
 }
 
+// A tile in another person's store (2026-09-23, Jung's Apps) opens this page with #remote=<base64url
+// {"url","key"}>. Her phone's copy of this page has its own storage that her store's pairing never
+// reaches, and a link opened from email lands in Safari, not here. Accepted for a first setup, or for
+// the same service with a new key; never a different service, so a stray link cannot repoint a copy.
+export function remoteFromHash(hash, storedRaw) {
+  const match = String(hash || '').match(/^#remote=([A-Za-z0-9_-]{16,2000})$/);
+  if (!match) return null;
+  let next = null;
+  try { next = readRemoteSettings(JSON.stringify(decodeDataPayload(match[1]))); } catch { return null; }
+  if (!next) return null;
+  const current = readRemoteSettings(storedRaw);
+  if (current && current.base !== next.base) return null;
+  return JSON.stringify({ url: next.base, key: next.key });
+}
+
 async function fetchRemoteData() {
   let settings = null;
   try { settings = readRemoteSettings(localStorage.getItem(REMOTE_KEY)); } catch { /* storage blocked */ }
@@ -571,6 +586,15 @@ function refreshIfStale() {
 }
 
 export async function main() {
+  if (location.hash.startsWith('#remote=')) {
+    let stored = null;
+    try { stored = localStorage.getItem(REMOTE_KEY); } catch { /* storage blocked */ }
+    const remote = remoteFromHash(location.hash, stored);
+    history.replaceState(null, '', location.pathname + location.search);
+    if (remote) {
+      try { localStorage.setItem(REMOTE_KEY, remote); } catch { /* storage blocked */ }
+    }
+  }
   const pending = takeImportFromHash();
   if (pending) Object.assign(view, { pending, importError: false });
   view.data = readStoredData();
