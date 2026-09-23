@@ -258,6 +258,12 @@ export function parseHash(hash) {
   }
 }
 
+// A store tile (Jung's Apps) opens with the same #fetch= every time. When it names the source this
+// device already remembers, there is nothing to ask: getShelf() re-syncs that source on every open.
+export function isRememberedFetch(intent, rememberedUrl) {
+  return !!intent && intent.kind === 'fetch' && typeof rememberedUrl === 'string' && intent.value === rememberedUrl;
+}
+
 // The link that opens the app straight at one item (see parseHash).
 export function itemLink(pageUrl, id) {
   const u = new URL(pageUrl);

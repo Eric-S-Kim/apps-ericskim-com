@@ -13,8 +13,9 @@ import {
   isShelfPayload,
   isTrustedShelfFetchUrl,
   parseHash,
+  isRememberedFetch,
   itemLink,
-} from './adapters.mjs?v=13'; // build tag: bump with sw.js CACHE + index.html (a test checks they agree)
+} from './adapters.mjs?v=14'; // build tag: bump with sw.js CACHE + index.html (a test checks they agree)
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -296,6 +297,12 @@ async function handleHash() {
   const intent = parseHash(location.hash);
   if (!intent) return;
   if (intent.kind === 'item') { jumpToItem(intent.value); return; }
+  let remembered = null;
+  try { remembered = localStorage.getItem(LS_SOURCE_KEY); } catch {}
+  if (isRememberedFetch(intent, remembered)) {
+    history.replaceState(null, '', location.pathname + location.search);
+    return;
+  }
   const pending = await takeImport(intent);
   if (pending) {
     Object.assign(view, { pending, importError: false });

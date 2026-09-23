@@ -1,7 +1,7 @@
 // Network-first service worker: ALWAYS serve fresh code/data when online, so logic
 // updates are never stale; fall back to cache only when offline. (A cache-first SW
 // previously served a stale adapters.mjs and hid the reorder buttons.)
-const CACHE = 'pantry-shelf-v13'; // build tag: bump with the ?v= in index.html + app.mjs (a test checks they agree)
+const CACHE = 'pantry-shelf-v14'; // build tag: bump with the ?v= in index.html + app.mjs (a test checks they agree)
 const CORE = ['./', './index.html', './styles.css', './app.mjs', './adapters.mjs', './manifest.webmanifest', './icon.svg', './icon-any-192.png', './icon-any-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './fonts/jost-latin.woff2'];
 
 // GitHub Pages sends max-age=600, so a plain fetch can be answered from the browser's HTTP cache with the
