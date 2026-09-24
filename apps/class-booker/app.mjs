@@ -1,3 +1,4 @@
+import { isTicketData, bookingFor, bookingLabel, ticketIcon, showBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260923-tickets1';
 export const STORAGE_KEY = 'class-booker-data-v1';
 
 const TEXT_LIMITS = {
@@ -26,6 +27,7 @@ function validText(value, max) {
 export function isClassBookerData(value) {
   if (!value || value.version !== 1 || !Array.isArray(value.classes)) return false;
   if (value.classes.length < 1 || value.classes.length > 25) return false;
+  if (value.tickets !== undefined && !isTicketData(value.tickets, value.classes)) return false;
 
   const ids = new Set();
   return value.classes.every((item) => {
@@ -52,6 +54,7 @@ function takeImportFromHash() {
   history.replaceState(null, '', location.pathname + location.search);
   try {
     const data = decodeDataPayload(match[1]);
+    if (data.tickets !== undefined) throw new Error('tickets cannot be imported in a URL');
     if (!isClassBookerData(data)) throw new Error('invalid class data');
     return data;
   } catch (error) {
@@ -202,7 +205,7 @@ function dateKey(date) {
 
 // Every dated class occurrence from this Monday through the end of next week, in time order. A class is
 // "past" once its day is gone or today's end time has passed; "soonest" marks each class's next real date.
-export function buildSchedule(classes, now = new Date(), weeksAhead = WEEKS_AHEAD) {
+export function buildSchedule(classes, now = venueNow(), weeksAhead = WEEKS_AHEAD) {
   const today = startOfDay(now);
   const monday = addDays(today, -((today.getDay() + 6) % 7));
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
@@ -335,6 +338,21 @@ function renderCard(occurrence) {
   body.append(element('h2', 'hero-venue', item.venue));
   // The title carries the class type now (Eric 2026-09-22: 'cleaner'); only a shortcut's own note shows below it.
   if (note) body.append(element('div', 'hero-meta', note));
+  const booking = bookingFor(view.data.tickets, occurrence);
+  if (booking) {
+    const state = element('div', 'booking-state', `${booking.status === 'cancelled' ? '' : '✓ '}${bookingLabel(booking)}`);
+    if (booking.ready) { state.append(ticketIcon(), element('span', '', freshTicketData(view.data.tickets) ? 'Ticket ready' : 'Saved ticket')); }
+    body.append(state);
+    if (!freshTicketData(view.data.tickets)) body.append(element('div', 'hero-meta', 'Saved confirmation — check for changes before entry.'));
+    card.append(body);
+    if (booking.status !== 'cancelled') {
+      const show = element('button', 'hero-go', booking.ready ? 'Show ticket' : 'View confirmation');
+      show.type = 'button';
+      show.addEventListener('click', () => showBooking(booking, item.venue, view.data.tickets.checkedAt, !navigator.onLine));
+      card.append(show);
+      return card;
+    }
+  }
 
   // The studio link can't pre-select a date, so a later date says what to pick instead of promising a booking.
   const direct = soonest || hasDateSlot(item.url);
@@ -429,10 +447,19 @@ function renderRow(occurrence, isCurrent) {
   when.append(element('span', 'row-day', DAY_ABBR[date.getDay()]), element('span', 'row-date', String(date.getDate())));
   const main = element('span', 'row-main');
   main.append(element('span', 'row-venue', item.venue), element('span', 'row-meta', prettyTime(time)));
+  const booking = bookingFor(view.data.tickets, occurrence);
+  if (booking) main.append(element('span', 'row-booking', booking.ready
+    ? (freshTicketData(view.data.tickets) ? '🎟 Ticket ready' : '🎟 Saved ticket') : bookingLabel(booking)));
   pick.append(when, main);
   pick.addEventListener('click', () => select(occurrence));
-  const go = studioLink(item, 'row-go', `${item.action}, ${item.venue}, ${spokenDate(date)}`, date);
-  go.append(icon('out'));
+  const go = booking && booking.status !== 'cancelled' ? element('button', 'row-go')
+    : studioLink(item, 'row-go', `${item.action}, ${item.venue}, ${spokenDate(date)}`, date);
+  if (booking && booking.status !== 'cancelled') {
+    go.type = 'button';
+    go.setAttribute('aria-label', `${booking.ready ? 'Show ticket' : 'View confirmation'}, ${item.venue}`);
+    go.append(booking.ready ? ticketIcon() : icon('out'));
+    go.addEventListener('click', () => showBooking(booking, item.venue, view.data.tickets.checkedAt, !navigator.onLine));
+  } else go.append(icon('out'));
   row.append(pick, go);
   return row;
 }
@@ -522,7 +549,7 @@ function renderImportPanel(pending) {
   return panel;
 }
 
-function render(now = new Date()) {
+function render(now = venueNow()) {
   const importSection = document.getElementById('import');
   importSection.replaceChildren();
   importSection.hidden = !view.pending;
@@ -577,7 +604,7 @@ function render(now = new Date()) {
 
 // Redraw only when time actually changed what's on screen (a new day, or a class ending).
 function signature(schedule) {
-  return `${dateKey(schedule.today)}|${schedule.occurrences.map((occurrence) => (occurrence.past ? 1 : 0)).join('')}`;
+  return `${dateKey(schedule.today)}|${schedule.occurrences.map((occurrence) => (occurrence.past ? 1 : 0)).join('')}|${freshTicketData(view.data?.tickets)}`;
 }
 
 function refreshIfStale() {
