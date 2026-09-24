@@ -1,4 +1,4 @@
-const CACHE = 'class-booker-private-shell-20260923-tickets1';
+const CACHE = 'class-booker-private-shell-20260923-tickets2';
 const CORE = [
   './',
   './index.html',

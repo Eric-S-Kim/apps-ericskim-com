@@ -1,4 +1,4 @@
-import { isTicketData, bookingFor, bookingLabel, ticketIcon, showBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260923-tickets1';
+import { isTicketData, bookingFor, bookingLabel, ticketIcon, showBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260923-tickets2';
 export const STORAGE_KEY = 'class-booker-data-v1';
 
 const TEXT_LIMITS = {
@@ -449,9 +449,10 @@ function renderRow(occurrence, isCurrent) {
   main.append(element('span', 'row-venue', item.venue), element('span', 'row-meta', prettyTime(time)));
   const booking = bookingFor(view.data.tickets, occurrence);
   if (booking) main.append(element('span', 'row-booking', booking.ready
-    ? (freshTicketData(view.data.tickets) ? '🎟 Ticket ready' : '🎟 Saved ticket') : bookingLabel(booking)));
+    ? (!occurrence.past && freshTicketData(view.data.tickets) ? '🎟 Ticket ready' : '🎟 Saved ticket') : bookingLabel(booking)));
   pick.append(when, main);
-  pick.addEventListener('click', () => select(occurrence));
+  pick.addEventListener('click', () => occurrence.past && booking && booking.status !== 'cancelled'
+    ? showBooking(booking, item.venue, view.data.tickets.checkedAt, !navigator.onLine) : select(occurrence));
   const go = booking && booking.status !== 'cancelled' ? element('button', 'row-go')
     : studioLink(item, 'row-go', `${item.action}, ${item.venue}, ${spokenDate(date)}`, date);
   if (booking && booking.status !== 'cancelled') {
@@ -591,8 +592,13 @@ function render(now = venueNow()) {
     weekSection.append(...renderWeek(schedule, week, selected));
   }
 
-  // Every class still ahead in the viewed week, including the one on the card (highlighted).
-  const inWeek = schedule.occurrences.filter((occurrence) => occurrence.week === week && !occurrence.past);
+  // Keep evidenced bookings accessible after class ends; unbooked past dates stay hidden.
+  const inWeek = schedule.occurrences.filter((occurrence) => {
+    if (occurrence.week !== week) return false;
+    if (!occurrence.past) return true;
+    const booking = bookingFor(view.data.tickets, occurrence);
+    return booking && booking.status !== 'cancelled';
+  });
   later.hidden = !hasDated || inWeek.length === 0;
   document.getElementById('later-label').textContent = week === 0 ? 'Classes this week' : 'Classes next week';
   inWeek.forEach((occurrence) => rows.append(renderRow(occurrence, occurrence === selected)));
