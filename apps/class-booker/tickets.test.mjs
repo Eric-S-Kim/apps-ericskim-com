@@ -57,3 +57,14 @@ test('stale or future evidence cannot advertise a freshly ready ticket', () => {
   assert.equal(freshTicketData(packet([]), new Date('2026-09-24T08:00:00Z')), false);
   assert.equal(freshTicketData(packet([]), new Date('2026-09-23T01:00:00Z')), false);
 });
+
+test('original MIME body is bounded independently and never promotes a confirmation to a PDF ticket', () => {
+  const originalEmail = { format: 'html', body: '<table><tr><td>Source confirmation</td></tr></table>' };
+  const data = packet([{ ...b, originalEmail }]);
+  assert.ok(isTicketData(data, classes));
+  assert.equal(bookingFor(data, occurrence).ready, false);
+  for (const original of [null, {}, { format: 'script', body: 'x' }, { format: 'html', body: '' },
+    { format: 'html', body: '字'.repeat(40001) }, { format: 'text', body: 'x'.repeat(120001) }]) {
+    assert.equal(isTicketData(packet([{ ...b, originalEmail: original }]), classes), false);
+  }
+});

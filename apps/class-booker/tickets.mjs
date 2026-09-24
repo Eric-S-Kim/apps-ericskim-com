@@ -19,6 +19,13 @@ export function isTicketData(data, classes) {
     if (!b || !ids.has(b.classId) || !datePattern.test(b.date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(b.startTime)) return false;
     if (b.timeZone !== 'America/Vancouver' || !statuses.has(b.status) || !text(b.sourceId, 100) || seen.has(b.sourceId)) return false;
     if (!text(b.subject, 500) || !text(b.sender, 300) || !text(b.confirmationText, 18000)) return false;
+    if (b.originalEmail !== undefined) {
+      const original = b.originalEmail;
+      if (!original || !['html', 'text'].includes(original.format) || !text(original.body, 120000)) return false;
+      const bytes = new TextEncoder().encode(original.body).length;
+      if (bytes > 120000) return false;
+      size += bytes;
+    }
     if (!Number.isFinite(Date.parse(b.receivedAt)) || !Array.isArray(b.artifacts) || b.artifacts.length > 8) return false;
     const parsed = new Date(`${b.date}T12:00:00Z`);
     if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== b.date) return false;
@@ -84,6 +91,40 @@ const el = (tag, cls, value) => {
   return n;
 };
 
+// MB3's original-email pattern: sanitized source HTML plus an independent script-free sandbox.
+// The CSP also constrains a malformed payload. Source HTML is never inserted into the app DOM.
+const frameHead = '<meta name="viewport" content="width=device-width,initial-scale=1">'
+  + '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'none\'; style-src \'unsafe-inline\'; img-src https: data:; font-src https: data:; form-action \'none\'; base-uri \'none\'">'
+  + '<base target="_blank"><style>html,body{margin:0;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{background:white;color:#222;font-family:Arial,sans-serif}img{max-width:100%;height:auto}</style>';
+
+function originalFrame(body) {
+  const frame = el('iframe', 'ticket-original');
+  frame.title = 'Original confirmation email';
+  frame.setAttribute('sandbox', 'allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+  frame.referrerPolicy = 'no-referrer';
+  frame.srcdoc = frameHead + body;
+  const fit = () => {
+    if (!frame.isConnected || !frame.clientWidth) return;
+    const doc = frame.contentDocument;
+    if (!doc?.body) return;
+    const root = doc.documentElement;
+    frame.style.height = '0px';
+    root.style.zoom = '';
+    const width = Math.max(root.scrollWidth, doc.body.scrollWidth);
+    const height = Math.max(root.scrollHeight, doc.body.scrollHeight);
+    const scale = width > frame.clientWidth + 8 ? frame.clientWidth / width : 1;
+    if (scale < 1) root.style.zoom = String(scale);
+    frame.style.height = `${Math.min(Math.ceil(height * scale) + 24, 20000)}px`;
+  };
+  frame.addEventListener('load', () => {
+    fit();
+    frame.contentDocument?.querySelectorAll('img').forEach(img => {
+      if (!img.complete) { img.addEventListener('load', fit, { once: true }); img.addEventListener('error', fit, { once: true }); }
+    });
+  });
+  return { frame, fit };
+}
+
 export function showBooking(booking, venue, checkedAt, offline) {
   const previous = document.querySelector('.ticket-dialog');
   if (previous) previous.close();
@@ -96,6 +137,7 @@ export function showBooking(booking, venue, checkedAt, offline) {
   const when = new Date(checkedAt).toLocaleString(undefined, { timeZone: 'America/Vancouver', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   dialog.append(el('p', 'ticket-source', `${offline ? 'Saved copy · ' : ''}Email checked ${when} (Vancouver)`));
   const urls = [];
+  const observers = [];
   booking.artifacts.forEach((a, i) => {
     const bytes = Uint8Array.from(atob(a.data), c => c.charCodeAt(0));
     const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' })); urls.push(url);
@@ -106,11 +148,28 @@ export function showBooking(booking, venue, checkedAt, offline) {
   for (const b of booking.records) {
     const detail = el('details', 'ticket-email');
     detail.open = !booking.ready;
-    detail.append(el('summary', '', 'Email confirmation'));
-    detail.append(el('p', 'ticket-source', b.sender), el('h4', '', b.subject), el('p', 'ticket-copy', b.confirmationText));
+    detail.append(el('summary', '', b.originalEmail ? 'Original email' : 'Confirmation summary'));
+    detail.append(el('p', 'ticket-source', b.sender), el('h4', '', b.subject));
+    const mount = () => {
+      if (!detail.open || detail.querySelector('.ticket-original, .ticket-copy')) return;
+      if (b.originalEmail?.format === 'html') {
+        const { frame, fit } = originalFrame(b.originalEmail.body);
+        detail.append(frame);
+        let lastWidth = 0;
+        const observer = new ResizeObserver(entries => {
+          const width = entries[0].contentRect.width;
+          if (width !== lastWidth) { lastWidth = width; requestAnimationFrame(fit); }
+        });
+        observer.observe(detail); observers.push(observer);
+      } else {
+        detail.append(el('p', 'ticket-copy', b.originalEmail?.body || b.confirmationText));
+      }
+    };
+    detail.addEventListener('toggle', mount);
     dialog.append(detail);
+    mount();
   }
-  dialog.addEventListener('close', () => { urls.forEach(URL.revokeObjectURL); dialog.remove(); }, { once: true });
+  dialog.addEventListener('close', () => { observers.forEach(o => o.disconnect()); urls.forEach(URL.revokeObjectURL); dialog.remove(); }, { once: true });
   document.body.append(dialog); dialog.showModal();
   // Synchronous to the tap: mobile browsers can open the original PDF without a blocked async popup.
   if (urls.length === 1) window.open(urls[0], '_blank', 'noopener');

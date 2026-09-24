@@ -218,6 +218,8 @@ a.row-go:active { background: var(--surface); }
 .ticket-email { margin-top: 20px; }
 .ticket-email summary { cursor: pointer; min-height: 44px; }
 .ticket-copy { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 16px; line-height: 1.6; }
+.ticket-original { display: block; width: 100%; min-height: 320px; border: 0; background: white; color-scheme: light; }
+.ticket-email h4 { overflow-wrap: anywhere; }
 
 /* Tap delight overlay (delight.mjs): above everything, never takes a tap */
 .fx-layer { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
