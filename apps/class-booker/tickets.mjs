@@ -95,34 +95,56 @@ const el = (tag, cls, value) => {
 // The CSP also constrains a malformed payload. Source HTML is never inserted into the app DOM.
 const frameHead = '<meta name="viewport" content="width=device-width,initial-scale=1">'
   + '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'none\'; style-src \'unsafe-inline\'; img-src https: data:; font-src https: data:; form-action \'none\'; base-uri \'none\'">'
-  + '<base target="_blank"><style>html,body{margin:0;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{background:white;color:#222;font-family:Arial,sans-serif}img{max-width:100%;height:auto}</style>';
+  + '<base target="_blank"><style>html,body{margin:0;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{background:white;color:#222;font:13px Arial,Helvetica,sans-serif}</style>';
 
 function originalFrame(body) {
+  const viewport = el('div', 'ticket-original-viewport');
   const frame = el('iframe', 'ticket-original');
   frame.title = 'Original confirmation email';
   frame.setAttribute('sandbox', 'allow-same-origin allow-popups allow-popups-to-escape-sandbox');
   frame.referrerPolicy = 'no-referrer';
   frame.srcdoc = frameHead + body;
+  viewport.append(frame);
+  const zoom = el('button', 'ticket-zoom', 'Original size');
+  zoom.type = 'button'; zoom.hidden = true; zoom.setAttribute('aria-pressed', 'false');
+  let fitted = true;
   const fit = () => {
-    if (!frame.isConnected || !frame.clientWidth) return;
+    if (!frame.isConnected || !viewport.clientWidth) return;
     const doc = frame.contentDocument;
     if (!doc?.body) return;
-    const root = doc.documentElement;
+    const root = doc.documentElement, available = viewport.clientWidth;
+    frame.style.transform = '';
     frame.style.height = '0px';
-    root.style.zoom = '';
-    const width = Math.max(root.scrollWidth, doc.body.scrollWidth);
-    const height = Math.max(root.scrollHeight, doc.body.scrollHeight);
-    const scale = width > frame.clientWidth + 8 ? frame.clientWidth / width : 1;
-    if (scale < 1) root.style.zoom = String(scale);
-    frame.style.height = `${Math.min(Math.ceil(height * scale) + 24, 20000)}px`;
+    frame.style.width = `${available}px`;
+    // Give the email its natural viewport, then scale the finished frame. CSS zoom inside
+    // a narrow iframe can trigger text inflation and change the source's line wrapping.
+    let width = available;
+    for (let pass = 0; pass < 2; pass++) {
+      width = Math.max(width, root.scrollWidth, doc.body.scrollWidth);
+      frame.style.width = `${width}px`;
+    }
+    const height = Math.min(Math.max(root.scrollHeight, doc.body.scrollHeight) + 2, 20000);
+    const scale = fitted ? Math.min(1, available / width) : 1;
+    frame.style.height = `${height}px`;
+    frame.style.transform = `scale(${scale})`;
+    viewport.style.height = `${Math.ceil(height * scale) + (fitted ? 0 : 18)}px`;
+    viewport.style.overflowX = fitted ? 'hidden' : 'auto';
+    zoom.hidden = width <= available + 1;
   };
+  zoom.addEventListener('click', () => {
+    fitted = !fitted;
+    zoom.textContent = fitted ? 'Original size' : 'Fit to screen';
+    zoom.setAttribute('aria-pressed', String(!fitted));
+    fit();
+    viewport.scrollLeft = 0;
+  });
   frame.addEventListener('load', () => {
     fit();
     frame.contentDocument?.querySelectorAll('img').forEach(img => {
       if (!img.complete) { img.addEventListener('load', fit, { once: true }); img.addEventListener('error', fit, { once: true }); }
     });
   });
-  return { frame, fit };
+  return { frame, fit, zoom, viewport };
 }
 
 export function showBooking(booking, venue, checkedAt, offline) {
@@ -153,8 +175,8 @@ export function showBooking(booking, venue, checkedAt, offline) {
     const mount = () => {
       if (!detail.open || detail.querySelector('.ticket-original, .ticket-copy')) return;
       if (b.originalEmail?.format === 'html') {
-        const { frame, fit } = originalFrame(b.originalEmail.body);
-        detail.append(frame);
+        const { fit, zoom, viewport } = originalFrame(b.originalEmail.body);
+        detail.append(zoom, viewport);
         let lastWidth = 0;
         const observer = new ResizeObserver(entries => {
           const width = entries[0].contentRect.width;

@@ -1,4 +1,4 @@
-import { isTicketData, bookingFor, bookingLabel, ticketIcon, showBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260923-original-email';
+import { isTicketData, bookingFor, bookingLabel, ticketIcon, showBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260924-email-layout';
 export const STORAGE_KEY = 'class-booker-data-v1';
 
 const TEXT_LIMITS = {

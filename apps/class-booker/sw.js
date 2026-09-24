@@ -1,4 +1,4 @@
-const CACHE = 'class-booker-private-shell-20260923-original-email';
+const CACHE = 'class-booker-private-shell-20260924-email-layout';
 const CORE = [
   './',
   './index.html',
