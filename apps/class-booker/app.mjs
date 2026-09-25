@@ -1,4 +1,6 @@
-import { isTicketData, bookingFor, bookingLabel, ticketIcon, showBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260924-email-layout';
+import { isTicketData, bookingLabel, ticketIcon, showBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260924-calendar';
+import { isCalendarTicketData, payloadFits, effectiveBooking, calendarLabel, calendarAction, PAYLOAD_LIMIT } from './calendar-tickets.mjs?v=20260924-calendar';
+import { createTicketCache, acceptsSnapshot, revisionOf, shortcutOnly, REVISION_KEY } from './ticket-cache.mjs?v=20260924-calendar';
 export const STORAGE_KEY = 'class-booker-data-v1';
 
 const TEXT_LIMITS = {
@@ -27,7 +29,9 @@ function validText(value, max) {
 export function isClassBookerData(value) {
   if (!value || value.version !== 1 || !Array.isArray(value.classes)) return false;
   if (value.classes.length < 1 || value.classes.length > 25) return false;
+  if (!payloadFits(value)) return false;
   if (value.tickets !== undefined && !isTicketData(value.tickets, value.classes)) return false;
+  if (value.calendarTickets !== undefined && !isCalendarTicketData(value.calendarTickets, value.classes)) return false;
 
   const ids = new Set();
   return value.classes.every((item) => {
@@ -37,6 +41,10 @@ export function isClassBookerData(value) {
     ids.add(item.id);
     return true;
   });
+}
+
+export function isShortcutImport(data) {
+  return data?.tickets === undefined && data?.calendarTickets === undefined && isClassBookerData(data);
 }
 
 export function decodeDataPayload(encoded) {
@@ -54,8 +62,7 @@ function takeImportFromHash() {
   history.replaceState(null, '', location.pathname + location.search);
   try {
     const data = decodeDataPayload(match[1]);
-    if (data.tickets !== undefined) throw new Error('tickets cannot be imported in a URL');
-    if (!isClassBookerData(data)) throw new Error('invalid class data');
+    if (!isShortcutImport(data)) throw new Error('invalid class shortcut import');
     return data;
   } catch (error) {
     console.warn('Class shortcut import failed:', error);
@@ -109,7 +116,10 @@ async function fetchRemoteData() {
       signal: controller.signal,
     });
     if (!response.ok) return null;
-    const data = await response.json();
+    if (Number(response.headers.get('content-length')) > PAYLOAD_LIMIT) return null;
+    const body = await response.text();
+    if (new TextEncoder().encode(body).length > PAYLOAD_LIMIT) return null;
+    const data = JSON.parse(body);
     return isClassBookerData(data) ? data : null;
   } catch {
     return null;
@@ -119,14 +129,31 @@ async function fetchRemoteData() {
 }
 
 let remoteInFlight = null;
+const ticketCache = createTicketCache();
+let revisionFloor = 0;
+function rememberRevision(revision) {
+  revisionFloor = Math.max(revisionFloor, revision);
+  try { localStorage.setItem(REVISION_KEY, String(revisionFloor)); return true; } catch { return false; }
+}
+
 function syncRemote() {
   if (remoteInFlight) return remoteInFlight;
-  remoteInFlight = fetchRemoteData().then((data) => {
-    if (!data || view.pending) return;
-    const next = JSON.stringify(data);
-    if (next === JSON.stringify(view.data)) return;
-    try { localStorage.setItem(STORAGE_KEY, next); } catch { /* still show it this session */ }
-    Object.assign(view, { data, key: null, week: null });
+  remoteInFlight = fetchRemoteData().then(async (data) => {
+    if (view.pending) return;
+    if (!data) { view.syncError = true; render(); return; }
+    if (!acceptsSnapshot(data, view.data, revisionFloor)) { view.syncError = true; render(); return; }
+    // The watermark is written before displaying a newly observed decision, including a cancellation.
+    const watermark = rememberRevision(revisionOf(data));
+    try {
+      const saved = await ticketCache.save(data, revisionFloor);
+      if (!saved.data || !isClassBookerData(saved.data) || revisionOf(saved.data) < revisionFloor) throw new Error('Invalid saved originals');
+      Object.assign(view, { data: saved.data, durable: true, storageError: false, syncError: !saved.accepted });
+    } catch {
+      // A failed durable write must not leave an old ticket labelled ready. If even the watermark
+      // cannot be stored, hide originals rather than allow a cold restart to replay an accepted state.
+      Object.assign(view, { data: watermark ? data : shortcutOnly(data), durable: false, storageError: true, syncError: true });
+    }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(shortcutOnly(data))); } catch { /* alert covers storage failure */ }
     render();
   }).finally(() => { remoteInFlight = null; });
   return remoteInFlight;
@@ -257,12 +284,47 @@ export function nextOccurrence(schedule) {
   return schedule.occurrences.find((occurrence) => !occurrence.past) || null;
 }
 
+const dateFromKey = key => new Date(`${key}T12:00:00`);
+const clockMinutes = value => Number(value.slice(0, 2)) * 60 + Number(value.slice(3));
+function calendarTime(event) {
+  if (!event.startTime) return 'All day';
+  const label = value => {
+    const hour = Number(value.slice(0, 2));
+    return `${hour % 12 || 12}${value.slice(3) === '00' ? '' : `:${value.slice(3)}`} ${hour >= 12 ? 'PM' : 'AM'}`;
+  };
+  return `${label(event.startTime)}–${label(event.endTime)}`;
+}
+
+export function buildAppSchedule(data, now = venueNow()) {
+  const schedule = buildSchedule(data.classes, now);
+  schedule.minWeek = 0;
+  schedule.maxWeek = WEEKS_AHEAD;
+  const calendar = data.calendarTickets;
+  if (!calendar) return schedule;
+  const weekOf = date => Math.floor(Math.round((startOfDay(date) - schedule.monday) / DAY_MS) / 7);
+  schedule.minWeek = Math.min(0, weekOf(dateFromKey(calendar.windowStart)));
+  schedule.maxWeek = Math.max(WEEKS_AHEAD, weekOf(addDays(dateFromKey(calendar.windowEnd), -1)));
+  schedule.occurrences = schedule.occurrences.filter(o => !calendar.events.some(e => e.classId === o.item.id
+    && e.date === dateKey(o.date) && (e.startTime === null || o.times?.start === clockMinutes(e.startTime))));
+  calendar.events.forEach((event, order) => {
+    const date = startOfDay(dateFromKey(event.date));
+    const dayDiff = Math.round((date - schedule.today) / DAY_MS);
+    const times = event.startTime ? { start: clockMinutes(event.startTime), end: clockMinutes(event.endTime) } : null;
+    if (times && times.end <= times.start) times.end += 1440;
+    const past = dayDiff < 0 || dayDiff === 0 && times !== null && now.getHours() * 60 + now.getMinutes() >= times.end;
+    schedule.occurrences.push({ key: `calendar@${event.id}`, event, item: { id: event.classId || event.id, venue: event.title, when: calendarTime(event) },
+      date, times, week: weekOf(date), order, dayDiff, past, soonest: false });
+  });
+  schedule.occurrences.sort((a, b) => a.date - b.date || (a.times?.start || 0) - (b.times?.start || 0) || a.order - b.order);
+  return schedule;
+}
+
 export function weekDays(schedule, week) {
   const start = addDays(schedule.monday, week * 7);
   return Array.from({ length: 7 }, (_, index) => {
     const date = addDays(start, index);
     const key = dateKey(date);
-    const classes = schedule.occurrences.filter((occurrence) => !occurrence.past && dateKey(occurrence.date) === key);
+    const classes = schedule.occurrences.filter((occurrence) => (!occurrence.past || occurrence.event) && dateKey(occurrence.date) === key);
     return { date, classes, isToday: key === dateKey(schedule.today), isPast: date < schedule.today };
   });
 }
@@ -278,7 +340,8 @@ export function dayLabel(date, today) {
 
 // ---------- view ----------
 // Selection lives in memory only (the URL hash is reserved for the #data= setup import).
-const view = { data: null, key: null, week: null, signature: '', pending: null, importError: false };
+const view = { data: null, key: null, week: null, signature: '', pending: null, importError: false,
+  durable: false, storageError: false, syncError: false };
 
 // "7-8:45 PM" -> "7–8:45 PM" for display only.
 function prettyTime(time) {
@@ -328,6 +391,19 @@ function spokenDate(date) {
   return `${DAY_FULL[date.getDay()]} ${MONTHS_FULL[date.getMonth()]} ${date.getDate()}`;
 }
 
+function bookingState(booking) {
+  if (booking.calendar) return calendarLabel(booking, new Date(), !view.syncError && !view.storageError);
+  return booking.ready ? (!view.syncError && freshTicketData(booking) ? 'Ticket ready' : 'Saved ticket · check for changes') : bookingLabel(booking);
+}
+
+function originalAction(booking) {
+  return booking.calendar ? calendarAction(booking) : booking.records?.length ? (booking.ready ? 'Show ticket' : 'View confirmation') : null;
+}
+
+function openOriginal(booking, venue) {
+  showBooking(booking, venue, booking.checkedAt, !navigator.onLine && view.durable);
+}
+
 function renderCard(occurrence) {
   const { item, date, soonest } = occurrence;
   const { time, note } = splitWhen(item.when);
@@ -338,20 +414,19 @@ function renderCard(occurrence) {
   body.append(element('h2', 'hero-venue', item.venue));
   // The title carries the class type now (Eric 2026-09-22: 'cleaner'); only a shortcut's own note shows below it.
   if (note) body.append(element('div', 'hero-meta', note));
-  const booking = bookingFor(view.data.tickets, occurrence);
+  const booking = effectiveBooking(view.data, occurrence);
   if (booking) {
-    const state = element('div', 'booking-state', `${booking.status === 'cancelled' ? '' : '✓ '}${bookingLabel(booking)}`);
-    if (booking.ready) { state.append(ticketIcon(), element('span', '', freshTicketData(view.data.tickets) ? 'Ticket ready' : 'Saved ticket')); }
-    body.append(state);
-    if (!freshTicketData(view.data.tickets)) body.append(element('div', 'hero-meta', 'Saved confirmation — check for changes before entry.'));
+    body.append(element('div', 'booking-state', bookingState(booking)));
+    if (booking.reason) body.append(element('div', 'hero-meta', booking.reason));
     card.append(body);
-    if (booking.status !== 'cancelled') {
-      const show = element('button', 'hero-go', booking.ready ? 'Show ticket' : 'View confirmation');
+    const action = originalAction(booking);
+    if (action) {
+      const show = element('button', 'hero-go', action);
       show.type = 'button';
-      show.addEventListener('click', () => showBooking(booking, item.venue, view.data.tickets.checkedAt, !navigator.onLine));
+      show.addEventListener('click', () => openOriginal(booking, item.venue));
       card.append(show);
-      return card;
     }
+    return card;
   }
 
   // The studio link can't pre-select a date, so a later date says what to pick instead of promising a booking.
@@ -375,16 +450,17 @@ function renderUndatedCard(item) {
   return card;
 }
 
-function renderRestCard(week) {
+function renderRestCard(week, schedule) {
   const card = element('div', 'hero quiet');
   const body = element('div', 'hero-body');
-  body.append(element('h2', 'hero-venue', 'Nothing left this week'));
+  body.append(element('h2', 'hero-venue', 'No events this week'));
   card.append(body);
-  if (week < WEEKS_AHEAD) {
+  const nextEvent = schedule.occurrences.find(o => o.week > week && !o.past);
+  if (nextEvent) {
     const next = element('button', 'hero-go');
     next.type = 'button';
-    next.append(element('span', '', 'See next week'), icon('arrow'));
-    next.addEventListener('click', () => goToWeek(week + 1));
+    next.append(element('span', '', 'See next event'), icon('arrow'));
+    next.addEventListener('click', () => select(nextEvent));
     card.append(next);
   }
   return card;
@@ -400,13 +476,13 @@ function renderWeek(schedule, week, selected) {
 
   const head = element('div', 'week-head');
   const title = element('div', 'week-title');
-  title.append(element('h2', 'label strong', week === 0 ? 'This week' : 'Next week'), element('span', 'label', range));
+  title.append(element('h2', 'label strong', week === 0 ? 'This week' : week === 1 ? 'Next week' : String(first.getFullYear())), element('span', 'label', range));
   const nav = element('div', 'week-nav');
   [['prev', week - 1, 'Previous week'], ['next', week + 1, 'Next week']].forEach(([kind, target, label]) => {
     const button = element('button', 'nav-btn');
     button.type = 'button';
     button.setAttribute('aria-label', label);
-    button.disabled = target < 0 || target > WEEKS_AHEAD;
+    button.disabled = target < schedule.minWeek || target > schedule.maxWeek;
     button.append(icon(kind));
     button.addEventListener('click', () => goToWeek(target));
     nav.append(button);
@@ -447,21 +523,21 @@ function renderRow(occurrence, isCurrent) {
   when.append(element('span', 'row-day', DAY_ABBR[date.getDay()]), element('span', 'row-date', String(date.getDate())));
   const main = element('span', 'row-main');
   main.append(element('span', 'row-venue', item.venue), element('span', 'row-meta', prettyTime(time)));
-  const booking = bookingFor(view.data.tickets, occurrence);
-  if (booking) main.append(element('span', 'row-booking', booking.ready
-    ? (!occurrence.past && freshTicketData(view.data.tickets) ? '🎟 Ticket ready' : '🎟 Saved ticket') : bookingLabel(booking)));
+  const booking = effectiveBooking(view.data, occurrence);
+  if (booking) main.append(element('span', 'row-booking', bookingState(booking)));
   pick.append(when, main);
-  pick.addEventListener('click', () => occurrence.past && booking && booking.status !== 'cancelled'
-    ? showBooking(booking, item.venue, view.data.tickets.checkedAt, !navigator.onLine) : select(occurrence));
-  const go = booking && booking.status !== 'cancelled' ? element('button', 'row-go')
-    : studioLink(item, 'row-go', `${item.action}, ${item.venue}, ${spokenDate(date)}`, date);
-  if (booking && booking.status !== 'cancelled') {
+  pick.addEventListener('click', () => select(occurrence));
+  row.append(pick);
+  const action = booking && originalAction(booking);
+  if (booking && !action) return row;
+  const go = booking ? element('button', 'row-go') : studioLink(item, 'row-go', `${item.action}, ${item.venue}, ${spokenDate(date)}`, date);
+  if (booking) {
     go.type = 'button';
-    go.setAttribute('aria-label', `${booking.ready ? 'Show ticket' : 'View confirmation'}, ${item.venue}`);
+    go.setAttribute('aria-label', `${action}, ${item.venue}`);
     go.append(booking.ready ? ticketIcon() : icon('out'));
-    go.addEventListener('click', () => showBooking(booking, item.venue, view.data.tickets.checkedAt, !navigator.onLine));
+    go.addEventListener('click', () => openOriginal(booking, item.venue));
   } else go.append(icon('out'));
-  row.append(pick, go);
+  row.append(go);
   return row;
 }
 
@@ -487,9 +563,9 @@ function select(occurrence) {
 }
 
 function goToWeek(week) {
-  if (week < 0 || week > WEEKS_AHEAD) return;
-  const schedule = buildSchedule(view.data.classes);
-  const first = schedule.occurrences.find((occurrence) => occurrence.week === week && !occurrence.past);
+  const schedule = buildAppSchedule(view.data);
+  if (week < schedule.minWeek || week > schedule.maxWeek) return;
+  const first = schedule.occurrences.find((occurrence) => occurrence.week === week && (!occurrence.past || occurrence.event));
   view.key = first ? first.key : null;
   view.week = week;
   render();
@@ -504,7 +580,7 @@ function resetView() {
 function resolveView(schedule) {
   const next = nextOccurrence(schedule);
   let selected = view.key
-    ? schedule.occurrences.find((occurrence) => occurrence.key === view.key && !occurrence.past) || null
+    ? schedule.occurrences.find((occurrence) => occurrence.key === view.key && (!occurrence.past || occurrence.event || effectiveBooking(view.data, occurrence))) || null
     : null;
   if (view.key && !selected) {
     view.key = null; // the chosen class has ended; fall back to what's next
@@ -527,7 +603,10 @@ function renderImportPanel(pending) {
   const actions = element('div', 'import-actions');
   const load = element('button', 'import-go', 'Load classes');
   load.type = 'button';
-  load.addEventListener('click', () => {
+  load.addEventListener('click', async () => {
+    // A shortcut import can change its own list without discarding a newer ticket decision.
+    const next = { ...view.data, ...pending };
+    if (!isClassBookerData(next)) { view.importError = true; render(); return; }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(pending));
     } catch (error) {
@@ -536,7 +615,14 @@ function renderImportPanel(pending) {
       render();
       return;
     }
-    Object.assign(view, { data: pending, pending: null, importError: false, key: null, week: null });
+    try {
+      const saved = await ticketCache.save(next, revisionFloor);
+      if (!saved.accepted) throw new Error('A newer ticket snapshot exists');
+      Object.assign(view, { data: saved.data, durable: true, storageError: false });
+    } catch {
+      Object.assign(view, { data: next, durable: false, storageError: true });
+    }
+    Object.assign(view, { pending: null, importError: false, key: null, week: null });
     render();
   });
   const cancel = element('button', 'import-cancel', 'Cancel');
@@ -568,13 +654,21 @@ function render(now = venueNow()) {
   [hero, weekSection, rows, anytimeRows].forEach((node) => node.replaceChildren());
 
   const data = view.data;
+  const notice = document.getElementById('sync-notice');
+  const hasOriginals = Boolean(data?.tickets || data?.calendarTickets);
+  const calendarStale = data?.calendarTickets && !freshTicketData(data.calendarTickets);
+  notice.hidden = !view.storageError && !calendarStale && !(view.syncError && hasOriginals);
+  notice.textContent = view.storageError
+    ? 'Originals could not be saved on this device. A connection is needed; reload before you leave.'
+    : calendarStale ? 'The calendar has not been checked recently. Check for changes before entry.'
+      : 'Updates are unavailable. Check for changes before entry.';
   empty.hidden = Boolean(data) || Boolean(view.pending);
   if (!data) {
     [title, hero, weekSection, later, anytime, reset].forEach((node) => { node.hidden = true; });
     return;
   }
 
-  const schedule = buildSchedule(data.classes, now);
+  const schedule = buildAppSchedule(data, now);
   const { selected, week, isHome } = resolveView(schedule);
   const hasDated = schedule.occurrences.length > 0;
   view.signature = signature(schedule);
@@ -588,7 +682,7 @@ function render(now = venueNow()) {
     hero.append(renderUndatedCard(schedule.undated[0].item));
   } else {
     if (selected) title.textContent = dayLabel(selected.date, schedule.today);
-    hero.append(selected ? renderCard(selected) : renderRestCard(week));
+    hero.append(selected ? renderCard(selected) : renderRestCard(week, schedule));
     weekSection.append(...renderWeek(schedule, week, selected));
   }
 
@@ -596,11 +690,10 @@ function render(now = venueNow()) {
   const inWeek = schedule.occurrences.filter((occurrence) => {
     if (occurrence.week !== week) return false;
     if (!occurrence.past) return true;
-    const booking = bookingFor(view.data.tickets, occurrence);
-    return booking && booking.status !== 'cancelled';
+    return occurrence.event || effectiveBooking(view.data, occurrence);
   });
   later.hidden = !hasDated || inWeek.length === 0;
-  document.getElementById('later-label').textContent = week === 0 ? 'Classes this week' : 'Classes next week';
+  document.getElementById('later-label').textContent = week === 0 ? 'This week' : week === 1 ? 'Next week' : 'Events';
   inWeek.forEach((occurrence) => rows.append(renderRow(occurrence, occurrence === selected)));
 
   const undated = hasDated ? schedule.undated : schedule.undated.slice(1);
@@ -610,12 +703,12 @@ function render(now = venueNow()) {
 
 // Redraw only when time actually changed what's on screen (a new day, or a class ending).
 function signature(schedule) {
-  return `${dateKey(schedule.today)}|${schedule.occurrences.map((occurrence) => (occurrence.past ? 1 : 0)).join('')}|${freshTicketData(view.data?.tickets)}`;
+  return `${dateKey(schedule.today)}|${schedule.occurrences.map(o => `${o.past ? 1 : 0}${freshTicketData(o.event) ? 1 : 0}`).join('')}|${freshTicketData(view.data?.tickets)}|${freshTicketData(view.data?.calendarTickets)}`;
 }
 
 function refreshIfStale() {
   if (!view.data) return;
-  if (signature(buildSchedule(view.data.classes)) !== view.signature) render();
+  if (signature(buildAppSchedule(view.data)) !== view.signature) render();
 }
 
 export async function main() {
@@ -630,7 +723,24 @@ export async function main() {
   }
   const pending = takeImportFromHash();
   if (pending) Object.assign(view, { pending, importError: false });
-  view.data = readStoredData();
+  const local = readStoredData();
+  try { revisionFloor = Math.max(revisionFloor, Number(localStorage.getItem(REVISION_KEY)) || 0); } catch { /* IndexedDB still verifies its own revision */ }
+  view.data = shortcutOnly(local);
+  view.durable = false;
+  view.storageError = false;
+  try {
+    let saved = await ticketCache.read();
+    // Migrate the old small localStorage payload once; subsequent writes contain shortcuts only.
+    if (!saved && local && (local.tickets || local.calendarTickets) && revisionOf(local) >= revisionFloor) {
+      saved = (await ticketCache.save(local, revisionFloor)).data;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(shortcutOnly(local))); } catch { /* durable IDB is authoritative */ }
+    }
+    if (saved && isClassBookerData(saved) && revisionOf(saved) >= revisionFloor) {
+      view.data = saved;
+      view.durable = true;
+      rememberRevision(revisionOf(saved));
+    } else if (saved || revisionFloor > 0) view.storageError = true;
+  } catch { view.storageError = true; }
   view.key = null;
   view.week = null;
   render();
@@ -644,6 +754,9 @@ if (typeof document !== 'undefined') {
   });
   start();
   window.addEventListener('hashchange', start);
+  window.addEventListener('focus', () => { refreshIfStale(); syncRemote(); });
+  window.addEventListener('online', syncRemote);
+  window.addEventListener('offline', () => { view.syncError = true; render(); });
   document.getElementById('reset').addEventListener('click', resetView);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {

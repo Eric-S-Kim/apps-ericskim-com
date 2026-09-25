@@ -1,9 +1,11 @@
-const CACHE = 'class-booker-private-shell-20260924-email-layout';
+const CACHE = 'class-booker-private-shell-20260924-calendar';
 const CORE = [
   './',
   './index.html',
   './app.mjs',
   './tickets.mjs',
+  './calendar-tickets.mjs',
+  './ticket-cache.mjs',
   './delight.mjs',
   './styles.css',
   './manifest.json',

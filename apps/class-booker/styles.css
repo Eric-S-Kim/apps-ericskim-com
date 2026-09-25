@@ -205,6 +205,7 @@ a.row-go:active { background: var(--surface); }
   background: var(--surface);
 }
 .empty strong { display: block; margin-bottom: 6px; color: var(--text); font-size: 18px; font-weight: 600; }
+.sync-notice { margin: 0; padding: 14px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--text); font-size: 14px; }
 
 .booking-state { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 16px; font-size: 14px; font-weight: 600; }
 .row-booking { color: var(--accent); font-size: 13px; }

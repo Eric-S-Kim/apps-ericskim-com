@@ -154,16 +154,21 @@ export function showBooking(booking, venue, checkedAt, offline) {
   const head = el('div', 'ticket-head');
   const close = el('button', 'ticket-close', 'Close'); close.type = 'button';
   close.addEventListener('click', () => dialog.close());
-  head.append(el('h2', '', booking.ready ? 'Your ticket' : 'Your confirmation'), close);
+  const originalOnly = booking.calendar && !['ready', 'confirmation'].includes(booking.status);
+  head.append(el('h2', '', booking.ready ? 'Your ticket' : originalOnly ? 'Original record' : 'Your confirmation'), close);
   dialog.append(head, el('h3', '', venue));
-  const when = new Date(checkedAt).toLocaleString(undefined, { timeZone: 'America/Vancouver', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-  dialog.append(el('p', 'ticket-source', `${offline ? 'Saved copy · ' : ''}Email checked ${when} (Vancouver)`));
+  if (checkedAt) {
+    const when = new Date(checkedAt).toLocaleString(undefined, { timeZone: 'America/Vancouver', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    dialog.append(el('p', 'ticket-source', `${offline ? 'Saved copy · ' : ''}Email checked ${when} (Vancouver)`));
+  }
+  if (booking.reason) dialog.append(el('p', 'ticket-source', booking.reason));
   const urls = [];
   const observers = [];
   booking.artifacts.forEach((a, i) => {
     const bytes = Uint8Array.from(atob(a.data), c => c.charCodeAt(0));
     const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' })); urls.push(url);
-    const link = el('a', 'hero-go', booking.artifacts.length > 1 ? `Open ticket PDF ${i + 1}` : 'Open ticket PDF');
+    const label = booking.ready ? 'Open ticket PDF' : 'Open original PDF';
+    const link = el('a', 'hero-go', booking.artifacts.length > 1 ? `${label} ${i + 1}` : label);
     link.href = url; link.target = '_blank'; link.rel = 'noopener';
     dialog.append(link);
   });

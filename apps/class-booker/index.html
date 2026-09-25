@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260924-email-layout" />
+  <link rel="stylesheet" href="./styles.css?v=20260924-calendar" />
 </head>
 <body>
   <main class="wrap">
@@ -21,8 +21,9 @@
       <button id="reset" class="reset" type="button" hidden>Next up</button>
     </header>
     <section id="import" aria-label="Load classes from a setup link" hidden></section>
+    <p id="sync-notice" class="sync-notice" role="status" hidden></p>
     <h1 id="title" aria-live="polite" hidden></h1>
-    <section id="hero" aria-label="Selected class" hidden></section>
+    <section id="hero" aria-label="Selected event" hidden></section>
     <section id="week" class="week" aria-label="Week" hidden></section>
     <section id="later" class="later" hidden>
       <h2 id="later-label" class="label"></h2>
@@ -37,8 +38,8 @@
       Open your private Class Booker setup link on this phone to restore them.
     </section>
   </main>
-  <script type="module" src="./app.mjs?v=20260924-email-layout"></script>
-  <script type="module" src="./delight.mjs?v=20260924-email-layout"></script>
+  <script type="module" src="./app.mjs?v=20260924-calendar"></script>
+  <script type="module" src="./delight.mjs?v=20260924-calendar"></script>
   <script>
     (() => {
       if (!('serviceWorker' in navigator)) return;
