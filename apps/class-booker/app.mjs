@@ -720,7 +720,7 @@ function render(now = venueNow()) {
     weekSection.append(...renderWeek(schedule, week, selected));
   }
 
-  // Keep evidenced bookings accessible after class ends; unbooked past dates stay hidden.
+  // Keep calendar events and evidenced bookings accessible after they end.
   const inWeek = schedule.occurrences.filter((occurrence) => {
     if (occurrence.week !== week) return false;
     if (!occurrence.past) return true;
