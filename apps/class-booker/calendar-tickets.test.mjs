@@ -9,6 +9,21 @@ const event = { id: 'event-a', title: 'Example evening', date: '2026-09-23', sta
 const packet = (changes = {}) => ({ version: 1, revision: 100, checkedAt: '2026-09-24T01:00:00Z', windowStart: '2026-09-17', windowEnd: '2027-03-24', events: [event], sources: [source], invalidations: [], ...changes });
 const app = calendarTickets => ({ version: 1, classes, calendarTickets });
 
+test('unverified and cancelled sources retain their original PDFs without claiming admission', () => {
+  for (const status of ['confirmation', 'review', 'cancelled']) {
+    const current = { ...event, status };
+    const booking = effectiveBooking(app(packet({ events: [current] })), { event: current });
+    assert.equal(booking.ready, false);
+    assert.deepEqual(booking.artifacts, source.artifacts);
+    assert.notEqual(calendarAction(booking), 'Show ticket');
+  }
+  const invalidations = [{ classId: 'dance', date: event.date, startTime: event.startTime, reason: 'Cancelled' }];
+  const blocked = effectiveBooking(app(packet({ invalidations })), { event, item: { id: 'dance' } });
+  assert.equal(blocked.ready, false);
+  assert.equal(calendarAction(blocked), 'View original');
+  assert.deepEqual(blocked.artifacts, source.artifacts);
+});
+
 test('calendar schema requires explicit admission, coverage, identity and complete checks for ready', () => {
   assert.ok(isCalendarTicketData(packet(), classes));
   for (const change of [{ orderId: null }, { quantity: null }, { quantity: 0 }, { admission: 'confirmation' }, { lifecycle: 'review' }, { lifecycle: 'cancelled' }, { artifacts: [] }, { coverageDates: [] }]) {

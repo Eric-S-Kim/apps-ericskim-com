@@ -74,13 +74,18 @@ export function effectiveBooking(data, occurrence) {
   const invalidation = calendar?.invalidations.find(i => occurrence.event
     ? i.classId === occurrence.event.classId && i.date === occurrence.event.date && i.startTime === occurrence.event.startTime
     : sameOccurrence(i, occurrence));
-  if (invalidation) return { calendar: true, records: [], status: 'cancelled', checkedAt: null, reason: invalidation.reason, ready: false, artifacts: [] };
   const event = occurrence.event || calendar?.events.find(e => sameOccurrence(e, occurrence));
+  if (invalidation) {
+    const records = event ? event.sourceIds.map(id => calendar.sources.find(s => s.sourceId === id))
+      : bookingFor(data.tickets, occurrence)?.records || [];
+    return { calendar: true, records, status: 'cancelled', checkedAt: null, reason: invalidation.reason,
+      ready: false, artifacts: records.flatMap(s => s.artifacts || []) };
+  }
   if (event) {
     const sources = new Map(calendar.sources.map(s => [s.sourceId, s]));
     const records = event.sourceIds.map(id => sources.get(id));
     const eligible = records.filter(s => s.lifecycle === 'active' && s.admission === 'ticket' && s.orderId && s.quantity > 0 && s.coverageDates.includes(event.date));
-    const artifacts = event.status === 'ready' || event.status === 'stale' ? eligible.flatMap(s => s.artifacts) : [];
+    const artifacts = (event.status === 'ready' ? eligible : records).flatMap(s => s.artifacts);
     const seen = new Set();
     return { calendar: true, records, status: event.status, checkedAt: event.checkedAt, reason: event.reason,
       ready: event.status === 'ready', artifacts: artifacts.filter(a => !seen.has(a.data) && seen.add(a.data)) };

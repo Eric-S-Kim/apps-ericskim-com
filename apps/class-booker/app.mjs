@@ -1,6 +1,6 @@
 import { isTicketData, bookingLabel, ticketIcon, showBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260924-calendar';
 import { isCalendarTicketData, payloadFits, effectiveBooking, calendarLabel, calendarAction, PAYLOAD_LIMIT } from './calendar-tickets.mjs?v=20260924-calendar';
-import { createTicketCache, acceptsSnapshot, revisionOf, shortcutOnly, REVISION_KEY } from './ticket-cache.mjs?v=20260924-calendar';
+import { createTicketCache, acceptsSnapshot, revisionOf, shortcutOnly, readRevisionFloor, persistRevisionFloor } from './ticket-cache.mjs?v=20260924-calendar';
 export const STORAGE_KEY = 'class-booker-data-v1';
 
 const TEXT_LIMITS = {
@@ -133,7 +133,7 @@ const ticketCache = createTicketCache();
 let revisionFloor = 0;
 function rememberRevision(revision) {
   revisionFloor = Math.max(revisionFloor, revision);
-  try { localStorage.setItem(REVISION_KEY, String(revisionFloor)); return true; } catch { return false; }
+  try { revisionFloor = persistRevisionFloor(localStorage, revision, revisionFloor); return true; } catch { return false; }
 }
 
 function syncRemote() {
@@ -144,14 +144,19 @@ function syncRemote() {
     if (!acceptsSnapshot(data, view.data, revisionFloor)) { view.syncError = true; render(); return; }
     // The watermark is written before displaying a newly observed decision, including a cancellation.
     const watermark = rememberRevision(revisionOf(data));
+    if (revisionOf(data) < revisionFloor) {
+      Object.assign(view, { data: shortcutOnly(view.data || data), storageError: true, syncError: true, durable: false });
+      render(); return;
+    }
     try {
       const saved = await ticketCache.save(data, revisionFloor);
+      try { revisionFloor = readRevisionFloor(localStorage, revisionFloor); } catch { /* IDB still protects committed revisions */ }
       if (!saved.data || !isClassBookerData(saved.data) || revisionOf(saved.data) < revisionFloor) throw new Error('Invalid saved originals');
       Object.assign(view, { data: saved.data, durable: true, storageError: false, syncError: !saved.accepted });
     } catch {
       // A failed durable write must not leave an old ticket labelled ready. If even the watermark
       // cannot be stored, hide originals rather than allow a cold restart to replay an accepted state.
-      Object.assign(view, { data: watermark ? data : shortcutOnly(data), durable: false, storageError: true, syncError: true });
+      Object.assign(view, { data: watermark && revisionOf(data) >= revisionFloor ? data : shortcutOnly(data), durable: false, storageError: true, syncError: true });
     }
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(shortcutOnly(data))); } catch { /* alert covers storage failure */ }
     render();
@@ -400,6 +405,10 @@ function originalAction(booking) {
   return booking.calendar ? calendarAction(booking) : booking.records?.length ? (booking.ready ? 'Show ticket' : 'View confirmation') : null;
 }
 
+function bookingKnowledgeMissing() {
+  return view.storageError && revisionFloor > revisionOf(view.data);
+}
+
 function openOriginal(booking, venue) {
   showBooking(booking, venue, booking.checkedAt, !navigator.onLine && view.durable);
 }
@@ -429,6 +438,11 @@ function renderCard(occurrence) {
     return card;
   }
 
+  if (bookingKnowledgeMissing()) {
+    body.append(element('div', 'hero-meta', 'Reconnect to check this booking.'));
+    card.append(body);
+    return card;
+  }
   // The studio link can't pre-select a date, so a later date says what to pick instead of promising a booking.
   const direct = soonest || hasDateSlot(item.url);
   const label = direct ? item.action : `Open schedule · pick ${DAY_ABBR[date.getDay()]} ${date.getDate()}`;
@@ -444,6 +458,10 @@ function renderUndatedCard(item) {
   const body = element('div', 'hero-body');
   body.append(element('h2', 'hero-venue', item.venue));
   body.append(element('div', 'hero-meta', item.when));
+  if (bookingKnowledgeMissing()) {
+    body.append(element('div', 'hero-meta', 'Reconnect to check your bookings.'));
+    card.append(body); return card;
+  }
   const go = studioLink(item, 'hero-go', `${item.action}, ${item.venue}`);
   go.append(element('span', '', item.action), icon('arrow'));
   card.append(body, go);
@@ -530,6 +548,7 @@ function renderRow(occurrence, isCurrent) {
   row.append(pick);
   const action = booking && originalAction(booking);
   if (booking && !action) return row;
+  if (!booking && bookingKnowledgeMissing()) return row;
   const go = booking ? element('button', 'row-go') : studioLink(item, 'row-go', `${item.action}, ${item.venue}, ${spokenDate(date)}`, date);
   if (booking) {
     go.type = 'button';
@@ -543,7 +562,7 @@ function renderRow(occurrence, isCurrent) {
 
 function renderUndatedRow(item) {
   const row = element('div', 'row');
-  const link = studioLink(item, 'row-select', `${item.action}, ${item.venue}`);
+  const link = bookingKnowledgeMissing() ? element('div', 'row-select') : studioLink(item, 'row-select', `${item.action}, ${item.venue}`);
   const when = element('span', 'row-when');
   when.append(element('span', 'row-day', item.chip));
   const main = element('span', 'row-main');
@@ -599,14 +618,18 @@ function renderImportPanel(pending) {
   const list = element('ul', 'import-list');
   pending.classes.forEach((item) => list.append(element('li', '', item.venue)));
   panel.append(list);
-  if (view.importError) panel.append(element('p', 'import-error', 'Couldn’t save on this device. Check that Chrome allows site data, then try again.'));
+  if (view.importError) panel.append(element('p', 'import-error', typeof view.importError === 'string' ? view.importError
+    : 'Couldn’t save on this device. Check that Chrome allows site data, then try again.'));
   const actions = element('div', 'import-actions');
   const load = element('button', 'import-go', 'Load classes');
   load.type = 'button';
   load.addEventListener('click', async () => {
     // A shortcut import can change its own list without discarding a newer ticket decision.
     const next = { ...view.data, ...pending };
-    if (!isClassBookerData(next)) { view.importError = true; render(); return; }
+    if (!isClassBookerData(next)) {
+      view.importError = 'This setup conflicts with your saved tickets. Your current classes and tickets have been kept.';
+      render(); return;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(pending));
     } catch (error) {
@@ -616,11 +639,22 @@ function renderImportPanel(pending) {
       return;
     }
     try {
+      try { revisionFloor = readRevisionFloor(localStorage, revisionFloor); } catch { /* cache also checks its revision */ }
       const saved = await ticketCache.save(next, revisionFloor);
-      if (!saved.accepted) throw new Error('A newer ticket snapshot exists');
+      try { revisionFloor = readRevisionFloor(localStorage, revisionFloor); } catch { /* IDB still protects committed revisions */ }
+      if (!saved.data || revisionOf(saved.data) < revisionFloor) throw new Error('Saved originals are older than an observed decision');
+      if (!saved.accepted) {
+        if (saved.data && isClassBookerData(saved.data) && revisionOf(saved.data) >= revisionFloor) {
+          Object.assign(view, { data: saved.data, durable: true, storageError: false, importError: true });
+          rememberRevision(revisionOf(saved.data));
+          render(); return;
+        }
+        throw new Error('A newer ticket snapshot exists');
+      }
       Object.assign(view, { data: saved.data, durable: true, storageError: false });
     } catch {
-      Object.assign(view, { data: next, durable: false, storageError: true });
+      Object.assign(view, { data: shortcutOnly(next), durable: false, storageError: true, importError: true });
+      render(); return;
     }
     Object.assign(view, { pending: null, importError: false, key: null, week: null });
     render();
@@ -724,7 +758,7 @@ export async function main() {
   const pending = takeImportFromHash();
   if (pending) Object.assign(view, { pending, importError: false });
   const local = readStoredData();
-  try { revisionFloor = Math.max(revisionFloor, Number(localStorage.getItem(REVISION_KEY)) || 0); } catch { /* IndexedDB still verifies its own revision */ }
+  try { revisionFloor = readRevisionFloor(localStorage, revisionFloor); } catch { /* IndexedDB still verifies its own revision */ }
   view.data = shortcutOnly(local);
   view.durable = false;
   view.storageError = false;
@@ -739,6 +773,9 @@ export async function main() {
       view.data = saved;
       view.durable = true;
       rememberRevision(revisionOf(saved));
+      if (revisionOf(saved) < revisionFloor) {
+        view.data = shortcutOnly(local || saved); view.durable = false; view.storageError = true;
+      }
     } else if (saved || revisionFloor > 0) view.storageError = true;
   } catch { view.storageError = true; }
   view.key = null;

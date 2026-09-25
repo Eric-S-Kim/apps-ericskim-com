@@ -4,6 +4,35 @@ const STORE = 'snapshots';
 export const REVISION_KEY = 'class-booker-revision-v1';
 export const revisionOf = data => data?.calendarTickets?.revision || 0;
 
+// Each revision gets its own key: an older tab cannot overwrite a newer watermark.
+export function readRevisionFloor(storage, minimum = 0) {
+  let floor = Math.max(minimum, Number(storage.getItem(REVISION_KEY)) || 0);
+  for (let i = 0; i < storage.length; i++) {
+    const key = storage.key(i);
+    if (key?.startsWith(`${REVISION_KEY}:`)) {
+      const value = Number(key.slice(REVISION_KEY.length + 1));
+      if (Number.isSafeInteger(value) && value > 0) floor = Math.max(floor, value);
+    }
+  }
+  return floor;
+}
+
+export function persistRevisionFloor(storage, revision, minimum = 0) {
+  let floor = readRevisionFloor(storage, minimum);
+  if (revision >= floor && revision > 0) storage.setItem(`${REVISION_KEY}:${revision}`, '1');
+  floor = readRevisionFloor(storage, Math.max(floor, revision));
+  // Remove only superseded watermarks after the greater one is known to exist.
+  if (storage.getItem(`${REVISION_KEY}:${floor}`) === '1') {
+    const obsolete = [];
+    for (let i = 0; i < storage.length; i++) {
+      const key = storage.key(i);
+      if (key?.startsWith(`${REVISION_KEY}:`) && Number(key.slice(REVISION_KEY.length + 1)) < floor) obsolete.push(key);
+    }
+    for (const key of obsolete) { try { storage.removeItem(key); } catch { /* greater key remains authoritative */ } }
+  }
+  return floor;
+}
+
 export function acceptsSnapshot(next, current, minimum = 0) {
   if (revisionOf(next) < Math.max(revisionOf(current), minimum)) return false;
   return !current?.calendarTickets || revisionOf(next) !== revisionOf(current)

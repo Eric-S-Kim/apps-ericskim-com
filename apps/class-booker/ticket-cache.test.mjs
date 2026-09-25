@@ -1,8 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { acceptsSnapshot, createTicketCache, shortcutOnly } from './ticket-cache.mjs';
+import { acceptsSnapshot, createTicketCache, shortcutOnly, persistRevisionFloor, readRevisionFloor, REVISION_KEY } from './ticket-cache.mjs';
 
 const packet = revision => ({ version: 1, classes: [{ id: 'example' }], calendarTickets: { revision, sources: [{ data: 'JVBERi0xLjcK' }] } });
+
+test('older tab cannot lower a newer durable cancellation watermark, even with interleaved writes', () => {
+  const values = new Map();
+  let interleave;
+  const storage = { get length() { return values.size; }, key: n => [...values.keys()][n],
+    getItem: key => values.get(key) ?? null, removeItem: key => values.delete(key),
+    setItem(key, value) { if (interleave) { const call = interleave; interleave = null; call(); } values.set(key, value); } };
+  assert.equal(persistRevisionFloor(storage, 10), 10);
+  interleave = () => persistRevisionFloor(storage, 12);
+  assert.equal(persistRevisionFloor(storage, 11, 10), 12);
+  assert.equal(readRevisionFloor(storage), 12);
+  assert.equal(persistRevisionFloor(storage, 11), 12);
+  assert.equal(acceptsSnapshot(packet(11), null, readRevisionFloor(storage)), false);
+  assert.equal(values.get(`${REVISION_KEY}:12`), '1');
+});
 
 test('revision guards reject replay, missing calendars and changed data at the same revision', () => {
   assert.equal(acceptsSnapshot(packet(9), packet(10)), false);
