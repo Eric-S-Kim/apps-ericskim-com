@@ -1,6 +1,6 @@
-import { isTicketData, bookingLabel, ticketIcon, showBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260924-calendar';
-import { isCalendarTicketData, payloadFits, effectiveBooking, calendarLabel, calendarAction, PAYLOAD_LIMIT } from './calendar-tickets.mjs?v=20260924-calendar';
-import { createTicketCache, acceptsSnapshot, revisionOf, shortcutOnly, readRevisionFloor, persistRevisionFloor } from './ticket-cache.mjs?v=20260924-calendar';
+import { isTicketData, bookingLabel, ticketIcon, showBooking, invalidateOpenBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260925-wallet';
+import { isCalendarTicketData, payloadFits, effectiveBooking, calendarLabel, calendarAction, PAYLOAD_LIMIT } from './calendar-tickets.mjs?v=20260925-wallet';
+import { createTicketCache, acceptsSnapshot, revisionOf, shortcutOnly, readRevisionFloor, persistRevisionFloor } from './ticket-cache.mjs?v=20260925-wallet';
 export const STORAGE_KEY = 'class-booker-data-v1';
 
 const TEXT_LIMITS = {
@@ -132,6 +132,7 @@ let remoteInFlight = null;
 const ticketCache = createTicketCache();
 let revisionFloor = 0;
 function rememberRevision(revision) {
+  invalidateOpenBooking(revision);
   revisionFloor = Math.max(revisionFloor, revision);
   try { revisionFloor = persistRevisionFloor(localStorage, revision, revisionFloor); return true; } catch { return false; }
 }
@@ -422,7 +423,8 @@ function bookingKnowledgeMissing() {
 }
 
 function openOriginal(booking, venue) {
-  showBooking(booking, venue, booking.checkedAt, !navigator.onLine && view.durable);
+  if (revisionOf(view.data) < revisionFloor) return;
+  showBooking({ ...booking, reason: freshTicketData(booking) && !view.syncError ? booking.reason : 'Saved record · check for changes. ' + (booking.reason || '') }, venue, booking.checkedAt, !navigator.onLine && view.durable, revisionOf(view.data));
 }
 
 function renderCard(occurrence) {
@@ -820,6 +822,15 @@ if (typeof document !== 'undefined') {
   window.addEventListener('hashchange', start);
   window.addEventListener('focus', () => { refreshIfStale(); syncRemote(); });
   window.addEventListener('online', syncRemote);
+  window.addEventListener('storage', () => {
+    try {
+      revisionFloor = readRevisionFloor(localStorage, revisionFloor); invalidateOpenBooking(revisionFloor);
+      if (revisionOf(view.data) < revisionFloor) {
+        Object.assign(view, { data: shortcutOnly(view.data), storageError: true, durable: false, syncError: true });
+        render(); syncRemote();
+      }
+    } catch { /* online refresh still verifies */ }
+  });
   window.addEventListener('offline', () => { view.syncError = true; render(); });
   document.getElementById('reset').addEventListener('click', resetView);
   document.addEventListener('visibilitychange', () => {

@@ -1,4 +1,5 @@
-import { bookingFor, freshTicketData, validPdf } from './tickets.mjs?v=20260924-calendar';
+import { bookingFor, freshTicketData, validPdf } from './tickets.mjs?v=20260925-wallet';
+import { validWallet } from './wallet.mjs?v=20260925-wallet';
 
 export const PAYLOAD_LIMIT = 3500000;
 const bytes = value => new TextEncoder().encode(value).length;
@@ -19,7 +20,7 @@ export function validInstant(value) {
 }
 
 function validSource(s) {
-  return fields(s, ['sourceId', 'orderId', 'sender', 'subject', 'receivedAt', 'originalEmail', 'artifacts', 'coverageDates', 'quantity', 'admission', 'lifecycle'])
+  return fields(s, ['sourceId', 'orderId', 'sender', 'subject', 'receivedAt', 'originalEmail', 'artifacts', 'coverageDates', 'quantity', 'admission', 'lifecycle'], ['wallet'])
     && plain(s.sourceId, 100) && (s.orderId === null || plain(s.orderId, 200)) && plain(s.sender, 300) && plain(s.subject, 500)
     && validInstant(s.receivedAt) && fields(s.originalEmail, ['format', 'body'])
     && ['html', 'text'].includes(s.originalEmail.format) && plain(s.originalEmail.body, 120000) && bytes(s.originalEmail.body) <= 120000
@@ -27,7 +28,8 @@ function validSource(s) {
     && s.artifacts.every(a => fields(a, ['kind', 'name', 'data']) && validPdf(a))
     && Array.isArray(s.coverageDates) && s.coverageDates.length <= 31 && unique(s.coverageDates) && s.coverageDates.every(validDate)
     && (s.quantity === null || Number.isSafeInteger(s.quantity) && s.quantity > 0 && s.quantity <= 100)
-    && ['ticket', 'confirmation', 'acknowledgement'].includes(s.admission) && ['active', 'cancelled', 'review'].includes(s.lifecycle);
+    && ['ticket', 'confirmation', 'acknowledgement'].includes(s.admission) && ['active', 'cancelled', 'review'].includes(s.lifecycle)
+    && (s.wallet === undefined || validWallet(s));
 }
 
 export function isCalendarTicketData(data, classes) {
