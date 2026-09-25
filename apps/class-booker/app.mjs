@@ -304,11 +304,15 @@ export function buildAppSchedule(data, now = venueNow()) {
   const schedule = buildSchedule(data.classes, now);
   schedule.minWeek = 0;
   schedule.maxWeek = WEEKS_AHEAD;
+  schedule.firstDate = dateKey(schedule.monday);
+  schedule.lastDate = dateKey(addDays(schedule.monday, (WEEKS_AHEAD + 1) * 7 - 1));
   const calendar = data.calendarTickets;
   if (!calendar) return schedule;
   const weekOf = date => Math.floor(Math.round((startOfDay(date) - schedule.monday) / DAY_MS) / 7);
   schedule.minWeek = Math.min(0, weekOf(dateFromKey(calendar.windowStart)));
   schedule.maxWeek = Math.max(WEEKS_AHEAD, weekOf(addDays(dateFromKey(calendar.windowEnd), -1)));
+  schedule.firstDate = calendar.windowStart;
+  schedule.lastDate = dateKey(addDays(dateFromKey(calendar.windowEnd), -1));
   schedule.occurrences = schedule.occurrences.filter(o => !calendar.events.some(e => e.classId === o.item.id
     && e.date === dateKey(o.date) && (e.startTime === null || o.times?.start === clockMinutes(e.startTime))));
   calendar.events.forEach((event, order) => {
@@ -322,6 +326,14 @@ export function buildAppSchedule(data, now = venueNow()) {
   });
   schedule.occurrences.sort((a, b) => a.date - b.date || (a.times?.start || 0) - (b.times?.start || 0) || a.order - b.order);
   return schedule;
+}
+
+export function weekForDate(schedule, key) {
+  if (typeof key !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(key)
+    || key < schedule.firstDate || key > schedule.lastDate) return null;
+  const date = dateFromKey(key);
+  if (Number.isNaN(date.getTime()) || dateKey(date) !== key) return null;
+  return Math.floor(Math.round((startOfDay(date) - schedule.monday) / DAY_MS) / 7);
 }
 
 export function weekDays(schedule, week) {
@@ -526,7 +538,22 @@ function renderWeek(schedule, week, selected) {
     day.append(element('span', 'day-dot'));
     strip.append(day);
   });
-  return [head, strip];
+  const jump = element('label', 'date-jump');
+  jump.append(element('span', '', 'Jump to date'));
+  const input = element('input', 'date-input');
+  input.type = 'date';
+  input.min = schedule.firstDate;
+  input.max = schedule.lastDate;
+  const currentDate = dateKey(selected?.date || first);
+  input.value = currentDate < input.min ? input.min : currentDate > input.max ? input.max : currentDate;
+  input.addEventListener('change', () => {
+    const target = weekForDate(schedule, input.value);
+    if (target === null) { input.reportValidity(); return; }
+    const event = schedule.occurrences.find(o => dateKey(o.date) === input.value && (!o.past || o.event));
+    if (event) select(event); else goToWeek(target);
+  });
+  jump.append(input);
+  return [head, strip, jump];
 }
 
 function renderRow(occurrence, isCurrent) {
