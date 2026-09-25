@@ -785,6 +785,18 @@ export async function main() {
     }
   }
   const pending = takeImportFromHash();
+  const googleButton = document.getElementById('google-connection');
+  let connection = null;
+  try { connection = readRemoteSettings(localStorage.getItem(REMOTE_KEY)); } catch { /* unpaired */ }
+  if (googleButton) {
+    googleButton.hidden = !connection;
+    googleButton.onclick = () => {
+      if (!connection) return;
+      const destination = new URL('class-booker/google/', connection.base);
+      destination.hash = new URLSearchParams({ key: connection.key }).toString();
+      location.assign(destination.href);
+    };
+  }
   if (pending) Object.assign(view, { pending, importError: false });
   const local = readStoredData();
   try { revisionFloor = readRevisionFloor(localStorage, revisionFloor); } catch { /* IndexedDB still verifies its own revision */ }

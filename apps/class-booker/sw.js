@@ -1,4 +1,4 @@
-const CACHE = 'class-booker-private-shell-20260925-wallet';
+const CACHE = 'class-booker-private-shell-20260925-google';
 const CORE = [
   './',
   './index.html',
