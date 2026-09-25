@@ -12,12 +12,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260925-wallet" />
+  <link rel="stylesheet" href="./styles.css?v=20260925-google" />
 </head>
 <body>
   <main class="wrap">
     <header class="top">
       <span class="mark">Class/Booker</span>
+      <button id="google-connection" class="reset" type="button" aria-label="Google connection" hidden>Google</button>
       <button id="reset" class="reset" type="button" hidden>Next up</button>
     </header>
     <section id="import" aria-label="Load classes from a setup link" hidden></section>
@@ -38,8 +39,8 @@
       Open your private Class Booker setup link on this phone to restore them.
     </section>
   </main>
-  <script type="module" src="./app.mjs?v=20260925-wallet"></script>
-  <script type="module" src="./delight.mjs?v=20260925-wallet"></script>
+  <script type="module" src="./app.mjs?v=20260925-google"></script>
+  <script type="module" src="./delight.mjs?v=20260925-google"></script>
   <script>
     (() => {
       if (!('serviceWorker' in navigator)) return;
