@@ -1,3 +1,4 @@
+import { createWallet, ownership } from './wallet.mjs?v=20260925-wallet';
 // Credentials arrive only in authenticated private config; this module contains no ticket data.
 const text = (s, n) => typeof s === 'string' && s.length > 0 && s.length <= n;
 const statuses = new Set(['confirmed', 'reserved', 'purchased', 'cancelled']);
@@ -147,57 +148,62 @@ function originalFrame(body) {
   return { frame, fit, zoom, viewport };
 }
 
-export function showBooking(booking, venue, checkedAt, offline) {
+let activeWallet = null;
+
+export function invalidateOpenBooking(revision) {
+  if (activeWallet && revision > activeWallet.revision) activeWallet.invalidate();
+}
+
+export function showBooking(booking, venue, checkedAt, offline, revision = 0) {
   const previous = document.querySelector('.ticket-dialog');
   if (previous) previous.close();
   const dialog = el('dialog', 'ticket-dialog');
   const head = el('div', 'ticket-head');
   const close = el('button', 'ticket-close', 'Close'); close.type = 'button';
   close.addEventListener('click', () => dialog.close());
-  const originalOnly = booking.calendar && !['ready', 'confirmation'].includes(booking.status);
-  head.append(el('h2', '', booking.ready ? 'Your ticket' : originalOnly ? 'Original record' : 'Your confirmation'), close);
+  head.append(el('h2', '', 'Event wallet'), close);
   dialog.append(head, el('h3', '', venue));
   if (checkedAt) {
     const when = new Date(checkedAt).toLocaleString(undefined, { timeZone: 'America/Vancouver', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     dialog.append(el('p', 'ticket-source', `${offline ? 'Saved copy · ' : ''}Email checked ${when} (Vancouver)`));
   }
-  if (booking.reason) dialog.append(el('p', 'ticket-source', booking.reason));
-  const urls = [];
-  const observers = [];
-  booking.artifacts.forEach((a, i) => {
-    const bytes = Uint8Array.from(atob(a.data), c => c.charCodeAt(0));
-    const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' })); urls.push(url);
-    const label = booking.ready ? 'Open ticket PDF' : 'Open original PDF';
-    const link = el('a', 'hero-go', booking.artifacts.length > 1 ? `${label} ${i + 1}` : label);
-    link.href = url; link.target = '_blank'; link.rel = 'noopener';
-    dialog.append(link);
+  const wallet = createWallet(booking, (records, parent, originalLink) => {
+    const observers = [];
+    const seen = new Set();
+    for (const b of records) {
+      const detail = el('details', 'ticket-email');
+      detail.open = !b.artifacts.length && !['cancelled', 'review'].includes(b.lifecycle);
+      detail.append(el('summary', '', `${ownership(b)} · Original records`));
+      if (b.lifecycle === 'cancelled') detail.append(el('p', 'wallet-warning', 'Cancelled — do not use for entry.'));
+      for (const a of b.artifacts) if (!seen.has(a.data)) { detail.append(originalLink(a)); seen.add(a.data); }
+      if (b.sender) detail.append(el('p', 'ticket-source', b.sender));
+      if (b.subject) detail.append(el('h4', '', b.subject));
+      const mount = () => {
+        if (!detail.open || detail.querySelector('.ticket-original, .ticket-copy')) return;
+        if (b.originalEmail?.format === 'html') {
+          const { fit, zoom, viewport } = originalFrame(b.originalEmail.body);
+          detail.append(zoom, viewport);
+          let lastWidth = 0;
+          const observer = new ResizeObserver(entries => {
+            const width = entries[0].contentRect.width;
+            if (width !== lastWidth) { lastWidth = width; requestAnimationFrame(fit); }
+          });
+          observer.observe(detail); observers.push(observer);
+        } else if (b.originalEmail?.body || b.confirmationText) {
+          detail.append(el('p', 'ticket-copy', b.originalEmail?.body || b.confirmationText));
+        }
+      };
+      detail.addEventListener('toggle', mount);
+      parent.append(detail); mount();
+    }
+    return () => observers.forEach(o => o.disconnect());
   });
-  for (const b of booking.records) {
-    const detail = el('details', 'ticket-email');
-    detail.open = !booking.ready;
-    detail.append(el('summary', '', b.originalEmail ? 'Original email' : 'Confirmation summary'));
-    detail.append(el('p', 'ticket-source', b.sender), el('h4', '', b.subject));
-    const mount = () => {
-      if (!detail.open || detail.querySelector('.ticket-original, .ticket-copy')) return;
-      if (b.originalEmail?.format === 'html') {
-        const { fit, zoom, viewport } = originalFrame(b.originalEmail.body);
-        detail.append(zoom, viewport);
-        let lastWidth = 0;
-        const observer = new ResizeObserver(entries => {
-          const width = entries[0].contentRect.width;
-          if (width !== lastWidth) { lastWidth = width; requestAnimationFrame(fit); }
-        });
-        observer.observe(detail); observers.push(observer);
-      } else {
-        detail.append(el('p', 'ticket-copy', b.originalEmail?.body || b.confirmationText));
-      }
-    };
-    detail.addEventListener('toggle', mount);
-    dialog.append(detail);
-    mount();
-  }
-  dialog.addEventListener('close', () => { observers.forEach(o => o.disconnect()); urls.forEach(URL.revokeObjectURL); dialog.remove(); }, { once: true });
-  document.body.append(dialog); dialog.showModal();
-  // Synchronous to the tap: mobile browsers can open the original PDF without a blocked async popup.
-  if (urls.length === 1) window.open(urls[0], '_blank', 'noopener');
+  dialog.append(wallet.root);
+  const session = { revision, invalidate: () => {
+    wallet.destroy();
+    wallet.root.replaceChildren(el('p', 'wallet-warning', 'Tickets updated. Close and reopen this event to view the latest records.'));
+  } };
+  activeWallet = session;
+  dialog.addEventListener('close', () => { wallet.destroy(); if (activeWallet === session) activeWallet = null; dialog.remove(); }, { once: true });
+  document.body.append(dialog); dialog.showModal(); wallet.start();
 }
