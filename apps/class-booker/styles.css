@@ -119,6 +119,8 @@ h1 {
 .week-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .week-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .week-nav { display: flex; gap: 8px; }
+.date-jump { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; }
+.date-input { min-width: 0; max-width: 65%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); color-scheme: dark; font: inherit; }
 .nav-btn {
   display: flex;
   align-items: center;

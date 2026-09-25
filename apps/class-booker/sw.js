@@ -1,4 +1,4 @@
-const CACHE = 'class-booker-private-shell-20260924-calendar';
+const CACHE = 'class-booker-private-shell-20260925-date-jump';
 const CORE = [
   './',
   './index.html',

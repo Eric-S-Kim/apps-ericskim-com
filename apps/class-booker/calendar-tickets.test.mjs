@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { isCalendarTicketData, effectiveBooking, calendarLabel, calendarAction } from './calendar-tickets.mjs';
-import { buildSchedule, buildAppSchedule, isClassBookerData, isShortcutImport, weekDays } from './app.mjs';
+import { buildSchedule, buildAppSchedule, isClassBookerData, isShortcutImport, weekDays, weekForDate } from './app.mjs';
 
 const classes = [{ id: 'dance', chip: 'W', tag: 'Movement', venue: 'Example Studio', when: 'Wednesdays 7-8:45 PM', action: 'Book class', url: 'https://example.com/' }];
 const source = { sourceId: 'source-a', orderId: 'order-a', sender: 'Studio <studio@example.com>', subject: 'Your ticket', receivedAt: '2026-09-22T01:00:00Z', originalEmail: { format: 'text', body: 'Original synthetic ticket' }, artifacts: [{ kind: 'pdf', name: 'ticket.pdf', data: btoa('%PDF-1.7\nsynthetic fixture') }], coverageDates: ['2026-09-23'], quantity: 1, admission: 'ticket', lifecycle: 'active' };
@@ -85,6 +85,20 @@ test('calendar sources dedupe across days and suppress matching shortcut only', 
   assert.ok(isClassBookerData(data));
   assert.equal(buildAppSchedule(data, new Date(2026, 8, 23, 18)).occurrences.filter(o => o.date.getDate() === 23).length, 1);
   assert.equal(effectiveBooking(data, { event: tomorrow }).records[0], source);
+});
+
+test('date jump reaches one-year evidence and rejects impossible or uncovered dates', () => {
+  const distant = { ...event, id: 'next-year', date: '2027-09-23', sourceIds: [], status: 'missing', checkedAt: null };
+  const schedule = buildAppSchedule(app(packet({ windowEnd: '2027-09-24', events: [distant], sources: [] })), new Date(2026, 8, 24, 12));
+  const target = weekForDate(schedule, distant.date);
+  assert.ok(target >= 52);
+  assert.equal(weekDays(schedule, target).flatMap(day => day.classes).filter(o => o.event).length, 1);
+  assert.equal(weekForDate(schedule, '2027-09-24'), null);
+  assert.equal(weekForDate(schedule, '2026-09-16'), null);
+  assert.equal(weekForDate(schedule, '2027-02-30'), null);
+  assert.equal(weekForDate(schedule, ''), null);
+  assert.equal(typeof weekForDate(schedule, '2027-07-01'), 'number');
+  assert.equal(schedule.occurrences.filter(o => !o.event).length, 2);
 });
 
 test('combined UTF-8 budget rejects legacy plus calendar overflow; setup imports reject evidence', () => {
