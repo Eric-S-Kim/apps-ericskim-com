@@ -83,3 +83,16 @@ test('a multi-day event ends only when all daily sessions have ended', () => {
   assert.equal(rows(buildAppSchedule(payload, at(26, 2)))[0].past, false);
   assert.equal(rows(buildAppSchedule(payload, at(26, 3)))[0].past, true);
 });
+
+test('day-specific credentials cannot become an undifferentiated multi-day wallet', () => {
+  const oneDay = { ...source, coverageDates: ['2026-09-25'] };
+  const payload = data([event('2026-09-25'), event('2026-09-26')], [oneDay]);
+  assert.equal(rows(buildAppSchedule(payload, at(25))).length, 2);
+});
+
+test('the final overnight session of a grouped event remains on next week’s day selector', () => {
+  const payload = data([event('2026-09-26'), event('2026-09-27', { startTime: '22:00', endTime: '02:00' })]);
+  const schedule = buildAppSchedule(payload, at(28, 1));
+  assert.equal(visibleWeek(schedule, 0).filter(o => o.events).length, 1);
+  assert.equal(weekDays(schedule, 0)[0].classes.filter(o => o.events).length, 1);
+});

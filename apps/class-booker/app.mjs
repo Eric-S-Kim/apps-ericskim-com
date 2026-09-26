@@ -255,6 +255,11 @@ function groupEventDays(occurrences, sources, today) {
   }
   const finish = run => {
     if (run.length < 2) { result.push(...run); return; }
+    const dates = run.map(o => o.event.date);
+    if (run[0].event.sourceIds.some(id => {
+      const coverage = sources.find(s => s.sourceId === id)?.coverageDates || [];
+      return coverage.length && dates.some(date => !coverage.includes(date));
+    })) { result.push(...run); return; }
     const first = run[0], last = run.at(-1), current = run.find(upcoming) || last;
     result.push({ ...current, key: first.key, events: run.map(o => o.event),
       rangeStart: dateKey(first.date), rangeEnd: dateKey(last.date), past: run.every(o => o.past),
@@ -279,7 +284,8 @@ function groupEventDays(occurrences, sources, today) {
 }
 
 function onDate(occurrence, key) {
-  if (occurrence.events) return occurrence.events.some(e => e.date === key);
+  if (occurrence.events) return occurrence.events.some(e => e.date === key || e.startTime && e.endTime !== '00:00'
+    && clockMinutes(e.endTime) <= clockMinutes(e.startTime) && dateKey(addDays(dateFromKey(e.date), 1)) === key);
   return dateKey(occurrence.date) === key || occurrence.times?.end > 1440
     && dateKey(addDays(occurrence.date, 1)) === key;
 }
