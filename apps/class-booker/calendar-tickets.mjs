@@ -72,6 +72,19 @@ const sameOccurrence = (record, occurrence) => record.classId === occurrence.ite
 
 // All rows and heroes pass here. A calendar decision never falls back to a legacy ready ticket.
 export function effectiveBooking(data, occurrence) {
+  if (occurrence.events) {
+    const bookings = occurrence.events.map(event => effectiveBooking(data, { event }));
+    const states = new Set(bookings.map(b => b.status));
+    const status = states.size === 1 ? bookings[0].status
+      : states.has('cancelled') || states.has('review') ? 'review'
+        : states.has('stale') ? 'stale' : 'confirmation';
+    const records = [...new Map(bookings.flatMap(b => b.records).map(s => [s.sourceId, s])).values()];
+    const checkedAt = bookings.some(b => !b.checkedAt) ? null : bookings.map(b => b.checkedAt).sort()[0];
+    const warnings = bookings.filter(b => ['cancelled', 'review', 'stale'].includes(b.status)).map(b => b.reason);
+    return { calendar: true, records, status, checkedAt, ready: status === 'ready',
+      reason: warnings.length ? [...new Set(warnings)].join(' ') : bookings[0].reason,
+      artifacts: [...new Map(bookings.flatMap(b => b.artifacts).map(a => [a.data, a])).values()] };
+  }
   const calendar = data.calendarTickets;
   const invalidation = calendar?.invalidations.find(i => occurrence.event
     ? i.classId === occurrence.event.classId && i.date === occurrence.event.date && i.startTime === occurrence.event.startTime

@@ -1,4 +1,4 @@
-const CACHE = 'class-booker-private-shell-20260925-google';
+const CACHE = 'class-booker-private-shell-20260925-focus';
 const CORE = [
   './',
   './index.html',
@@ -36,6 +36,8 @@ const CORE = [
   './icon-maskable-192.png',
   './icon-maskable-512.png',
 ];
+const OPTIONAL = CORE.filter(url => /\/pdfjs\/(standard_fonts|wasm)\//.test(url));
+const ESSENTIAL = CORE.filter(url => !OPTIONAL.includes(url));
 
 // GitHub Pages sends max-age=600, so plain fetches can be answered from the browser's HTTP cache with the
 // previous deploy for up to 10 minutes. Precache with 'reload' and revalidate every fetch ('no-cache' =
@@ -43,7 +45,18 @@ const CORE = [
 // ?v=<build> tag (bump it with CACHE), because Chrome's in-memory script cache can skip the service worker.
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE)
-    .then((cache) => cache.addAll(CORE.map((url) => new Request(url, { cache: 'reload' }))))
+    .then(async cache => {
+      await cache.addAll(ESSENTIAL.map(url => new Request(url, { cache: 'reload' })));
+      // Optional PDF support cannot prevent the whole wallet from opening offline.
+      await Promise.allSettled(OPTIONAL.map(async url => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        try {
+          const response = await fetch(new Request(url, { cache: 'reload', signal: controller.signal }));
+          if (response.ok) await cache.put(url, response);
+        } finally { clearTimeout(timeout); }
+      }));
+    })
     .then(() => self.skipWaiting()));
 });
 
