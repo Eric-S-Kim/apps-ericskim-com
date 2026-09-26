@@ -1,5 +1,5 @@
 import { isTicketData, bookingLabel, ticketIcon, showBooking, invalidateOpenBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260925-wallet';
-import { isCalendarTicketData, payloadFits, effectiveBooking, calendarLabel, calendarAction, PAYLOAD_LIMIT } from './calendar-tickets.mjs?v=20260925-wallet';
+import { isCalendarTicketData, payloadFits, effectiveBooking, calendarLabel, calendarAction, PAYLOAD_LIMIT } from './calendar-tickets.mjs?v=20260925-focus';
 import { createTicketCache, acceptsSnapshot, revisionOf, shortcutOnly, readRevisionFloor, persistRevisionFloor } from './ticket-cache.mjs?v=20260925-wallet';
 export const STORAGE_KEY = 'class-booker-data-v1';
 
@@ -236,12 +236,77 @@ function dateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+function endsAt(date, times) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, times?.end ?? 1440);
+}
+
+const upcoming = occurrence => !occurrence.past;
+
+// Group presentation only: source records and each day's lifecycle remain untouched.
+function groupEventDays(occurrences, sources, today) {
+  const buckets = new Map(), result = [];
+  for (const o of occurrences) {
+    const e = o.event;
+    const identifiable = e && !e.classId && e.sourceIds.some(id => sources.find(s => s.sourceId === id)?.orderId);
+    if (!identifiable) { result.push(o); continue; }
+    const key = JSON.stringify([e.title.trim().toLowerCase().replace(/\s+/g, ' '), [...e.sourceIds].sort()]);
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(o);
+  }
+  const finish = run => {
+    if (run.length < 2) { result.push(...run); return; }
+    const dates = run.map(o => o.event.date);
+    if (run[0].event.sourceIds.some(id => {
+      const coverage = sources.find(s => s.sourceId === id)?.coverageDates || [];
+      return coverage.length && dates.some(date => !coverage.includes(date));
+    })) { result.push(...run); return; }
+    const first = run[0], last = run.at(-1), current = run.find(upcoming) || last;
+    result.push({ ...current, key: first.key, events: run.map(o => o.event),
+      rangeStart: dateKey(first.date), rangeEnd: dateKey(last.date), past: run.every(o => o.past),
+      // A multi-day event stays in this week's view between its daily sessions.
+      week: first.date <= today && last.date >= today ? 0 : current.week,
+      item: { ...first.item, when: `${run.length} days` } });
+  };
+  for (const bucket of buckets.values()) {
+    bucket.sort((a, b) => a.date - b.date);
+    // Two sessions on one date are not proof of one continuous booking.
+    if (new Set(bucket.map(o => dateKey(o.date))).size !== bucket.length) { result.push(...bucket); continue; }
+    let run = [];
+    for (const o of bucket) {
+      if (run.length && (dateKey(addDays(run.at(-1).date, 1)) !== dateKey(o.date) || run.length === 31)) {
+        finish(run); run = [];
+      }
+      run.push(o);
+    }
+    finish(run);
+  }
+  return result;
+}
+
+function onDate(occurrence, key) {
+  if (occurrence.events) return occurrence.events.some(e => e.date === key || e.startTime && e.endTime !== '00:00'
+    && clockMinutes(e.endTime) <= clockMinutes(e.startTime) && dateKey(addDays(dateFromKey(e.date), 1)) === key);
+  return dateKey(occurrence.date) === key || occurrence.times?.end > 1440
+    && dateKey(addDays(occurrence.date, 1)) === key;
+}
+
+export function visibleWeek(schedule, week) {
+  const dates = weekDays(schedule, week).map(d => dateKey(d.date));
+  return schedule.occurrences.filter(o => upcoming(o) && dates.some(key => onDate(o, key)));
+}
+
+function dateRange(occurrence) {
+  const start = dateFromKey(occurrence.rangeStart), end = dateFromKey(occurrence.rangeEnd);
+  return start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()
+    ? `${MONTHS[start.getMonth()]} ${start.getDate()}–${end.getDate()}`
+    : `${MONTHS[start.getMonth()]} ${start.getDate()} – ${MONTHS[end.getMonth()]} ${end.getDate()}`;
+}
+
 // Every dated class occurrence from this Monday through the end of next week, in time order. A class is
 // "past" once its day is gone or today's end time has passed; "soonest" marks each class's next real date.
 export function buildSchedule(classes, now = venueNow(), weeksAhead = WEEKS_AHEAD) {
   const today = startOfDay(now);
   const monday = addDays(today, -((today.getDay() + 6) % 7));
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const occurrences = [];
   const undated = [];
 
@@ -252,11 +317,12 @@ export function buildSchedule(classes, now = venueNow(), weeksAhead = WEEKS_AHEA
       return;
     }
     const times = parseTimes(item.when);
-    for (let week = 0; week <= weeksAhead; week += 1) {
+    for (let week = -1; week <= weeksAhead; week += 1) {
       const date = addDays(monday, week * 7 + (weekday + 6) % 7);
       const dayDiff = Math.round((date - today) / DAY_MS);
-      const past = dayDiff < 0 || (dayDiff === 0 && times !== null && nowMinutes >= times.end);
-      occurrences.push({ key: `${item.id}@${dateKey(date)}`, item, order, date, week, weekday, dayDiff, times, past });
+      const past = now >= endsAt(date, times);
+      if (week < 0 && past) continue;
+      occurrences.push({ key: `${item.id}@${dateKey(date)}`, item, order, date, week: Math.max(0, week), weekday, dayDiff, times, past });
     }
   });
 
@@ -305,14 +371,13 @@ export function buildAppSchedule(data, now = venueNow()) {
   const schedule = buildSchedule(data.classes, now);
   schedule.minWeek = 0;
   schedule.maxWeek = WEEKS_AHEAD;
-  schedule.firstDate = dateKey(schedule.monday);
+  schedule.firstDate = dateKey(schedule.today);
   schedule.lastDate = dateKey(addDays(schedule.monday, (WEEKS_AHEAD + 1) * 7 - 1));
   const calendar = data.calendarTickets;
   if (!calendar) return schedule;
   const weekOf = date => Math.floor(Math.round((startOfDay(date) - schedule.monday) / DAY_MS) / 7);
-  schedule.minWeek = Math.min(0, weekOf(dateFromKey(calendar.windowStart)));
   schedule.maxWeek = Math.max(WEEKS_AHEAD, weekOf(addDays(dateFromKey(calendar.windowEnd), -1)));
-  schedule.firstDate = calendar.windowStart;
+  schedule.firstDate = calendar.windowStart > schedule.firstDate ? calendar.windowStart : schedule.firstDate;
   schedule.lastDate = dateKey(addDays(dateFromKey(calendar.windowEnd), -1));
   schedule.occurrences = schedule.occurrences.filter(o => !calendar.events.some(e => e.classId === o.item.id
     && e.date === dateKey(o.date) && (e.startTime === null || o.times?.start === clockMinutes(e.startTime))));
@@ -321,10 +386,11 @@ export function buildAppSchedule(data, now = venueNow()) {
     const dayDiff = Math.round((date - schedule.today) / DAY_MS);
     const times = event.startTime ? { start: clockMinutes(event.startTime), end: clockMinutes(event.endTime) } : null;
     if (times && times.end <= times.start) times.end += 1440;
-    const past = dayDiff < 0 || dayDiff === 0 && times !== null && now.getHours() * 60 + now.getMinutes() >= times.end;
+    const past = now >= endsAt(date, times);
     schedule.occurrences.push({ key: `calendar@${event.id}`, event, item: { id: event.classId || event.id, venue: event.title, when: calendarTime(event) },
-      date, times, week: weekOf(date), order, dayDiff, past, soonest: false });
+      date, times, week: Math.max(0, weekOf(date)), order, dayDiff, past, soonest: false });
   });
+  schedule.occurrences = groupEventDays(schedule.occurrences, calendar.sources, schedule.today);
   schedule.occurrences.sort((a, b) => a.date - b.date || (a.times?.start || 0) - (b.times?.start || 0) || a.order - b.order);
   return schedule;
 }
@@ -342,7 +408,7 @@ export function weekDays(schedule, week) {
   return Array.from({ length: 7 }, (_, index) => {
     const date = addDays(start, index);
     const key = dateKey(date);
-    const classes = schedule.occurrences.filter((occurrence) => (!occurrence.past || occurrence.event) && dateKey(occurrence.date) === key);
+    const classes = date < schedule.today ? [] : schedule.occurrences.filter(o => upcoming(o) && onDate(o, key));
     return { date, classes, isToday: key === dateKey(schedule.today), isPast: date < schedule.today };
   });
 }
@@ -432,7 +498,8 @@ function renderCard(occurrence) {
   const { time, note } = splitWhen(item.when);
   const card = element('div', 'hero');
   // Headline carries the relative day ("Tomorrow"); the kicker carries the calendar date and time.
-  card.append(element('div', 'kicker', `${DAY_ABBR[date.getDay()]} ${MONTHS[date.getMonth()]} ${date.getDate()} · ${prettyTime(time)}`));
+  card.append(element('div', 'kicker', occurrence.events ? dateRange(occurrence)
+    : `${DAY_ABBR[date.getDay()]} ${MONTHS[date.getMonth()]} ${date.getDate()} · ${prettyTime(time)}`));
   const body = element('div', 'hero-body');
   body.append(element('h2', 'hero-venue', item.venue));
   // The title carries the class type now (Eric 2026-09-22: 'cleaner'); only a shortcut's own note shows below it.
@@ -440,7 +507,17 @@ function renderCard(occurrence) {
   const booking = effectiveBooking(view.data, occurrence);
   if (booking) {
     body.append(element('div', 'booking-state', bookingState(booking)));
-    if (booking.reason) body.append(element('div', 'hero-meta', booking.reason));
+    // Routine extraction notes (including one order's quantity) belong with its original.
+    if (booking.reason && ['review', 'cancelled', 'stale'].includes(booking.status)) body.append(element('div', 'hero-meta', booking.reason));
+    if (occurrence.events) {
+      const days = element('details', 'event-days');
+      days.append(element('summary', '', `Schedule · ${occurrence.events.length} days`));
+      for (const e of occurrence.events) {
+        const d = dateFromKey(e.date);
+        days.append(element('div', '', `${DAY_ABBR[d.getDay()]} ${MONTHS[d.getMonth()]} ${d.getDate()} · ${calendarTime(e)}${e.status === 'cancelled' ? ' · Cancelled' : ''}`));
+      }
+      body.append(days);
+    }
     card.append(body);
     const action = originalAction(booking);
     if (action) {
@@ -531,7 +608,7 @@ function renderWeek(schedule, week, selected) {
       day.type = 'button';
       day.setAttribute('aria-pressed', String(Boolean(isSelected)));
       day.setAttribute('aria-label', `${spokenDate(date)}${isToday ? ', today' : ''}: ${classes.map((c) => c.item.venue).join(', ')}`);
-      day.addEventListener('click', () => select(classes[0]));
+      day.addEventListener('click', () => select(classes[0], week));
     } else {
       day.setAttribute('aria-hidden', 'true');
     }
@@ -546,13 +623,13 @@ function renderWeek(schedule, week, selected) {
   input.type = 'date';
   input.min = schedule.firstDate;
   input.max = schedule.lastDate;
-  const currentDate = dateKey(selected?.date || first);
+  const currentDate = dateKey(selected?.week === week ? selected.date : first);
   input.value = currentDate < input.min ? input.min : currentDate > input.max ? input.max : currentDate;
   input.addEventListener('change', () => {
     const target = weekForDate(schedule, input.value);
     if (target === null) { input.reportValidity(); return; }
-    const event = schedule.occurrences.find(o => dateKey(o.date) === input.value && (!o.past || o.event));
-    if (event) select(event); else goToWeek(target);
+    const event = schedule.occurrences.find(o => upcoming(o) && onDate(o, input.value));
+    if (event) select(event, target); else goToWeek(target);
   });
   jump.append(input);
   return [head, strip, jump];
@@ -564,16 +641,17 @@ function renderRow(occurrence, isCurrent) {
   const row = element('div', `row${isCurrent ? ' current' : ''}`);
   const pick = element('button', 'row-select');
   pick.type = 'button';
-  pick.setAttribute('aria-label', `Show ${item.venue}, ${spokenDate(date)}`);
+  pick.setAttribute('aria-label', `Show ${item.venue}, ${occurrence.events ? dateRange(occurrence) : spokenDate(date)}`);
   if (isCurrent) pick.setAttribute('aria-current', 'true');
   const when = element('span', 'row-when');
-  when.append(element('span', 'row-day', DAY_ABBR[date.getDay()]), element('span', 'row-date', String(date.getDate())));
+  when.append(element('span', 'row-day', occurrence.events ? 'DATES' : DAY_ABBR[date.getDay()]),
+    element('span', occurrence.events ? 'row-range' : 'row-date', occurrence.events ? dateRange(occurrence) : String(date.getDate())));
   const main = element('span', 'row-main');
   main.append(element('span', 'row-venue', item.venue), element('span', 'row-meta', prettyTime(time)));
   const booking = effectiveBooking(view.data, occurrence);
   if (booking) main.append(element('span', 'row-booking', bookingState(booking)));
   pick.append(when, main);
-  pick.addEventListener('click', () => select(occurrence));
+  pick.addEventListener('click', () => select(occurrence, view.week ?? occurrence.week));
   row.append(pick);
   const action = booking && originalAction(booking);
   if (booking && !action) return row;
@@ -604,16 +682,16 @@ function renderUndatedRow(item) {
   return row;
 }
 
-function select(occurrence) {
+function select(occurrence, week = occurrence.week) {
   view.key = occurrence.key;
-  view.week = occurrence.week;
+  view.week = week;
   render();
 }
 
 function goToWeek(week) {
   const schedule = buildAppSchedule(view.data);
   if (week < schedule.minWeek || week > schedule.maxWeek) return;
-  const first = schedule.occurrences.find((occurrence) => occurrence.week === week && (!occurrence.past || occurrence.event));
+  const first = visibleWeek(schedule, week)[0];
   view.key = first ? first.key : null;
   view.week = week;
   render();
@@ -628,7 +706,7 @@ function resetView() {
 function resolveView(schedule) {
   const next = nextOccurrence(schedule);
   let selected = view.key
-    ? schedule.occurrences.find((occurrence) => occurrence.key === view.key && (!occurrence.past || occurrence.event || effectiveBooking(view.data, occurrence))) || null
+    ? schedule.occurrences.find((occurrence) => occurrence.key === view.key && upcoming(occurrence)) || null
     : null;
   if (view.key && !selected) {
     view.key = null; // the chosen class has ended; fall back to what's next
@@ -744,17 +822,13 @@ function render(now = venueNow()) {
   if (!hasDated) {
     hero.append(renderUndatedCard(schedule.undated[0].item));
   } else {
-    if (selected) title.textContent = dayLabel(selected.date, schedule.today);
+    if (selected) title.textContent = selected.events && selected.rangeStart <= dateKey(schedule.today)
+      ? 'In progress' : dayLabel(selected.date, schedule.today);
     hero.append(selected ? renderCard(selected) : renderRestCard(week, schedule));
     weekSection.append(...renderWeek(schedule, week, selected));
   }
 
-  // Keep calendar events and evidenced bookings accessible after they end.
-  const inWeek = schedule.occurrences.filter((occurrence) => {
-    if (occurrence.week !== week) return false;
-    if (!occurrence.past) return true;
-    return occurrence.event || effectiveBooking(view.data, occurrence);
-  });
+  const inWeek = visibleWeek(schedule, week);
   later.hidden = !hasDated || inWeek.length === 0;
   document.getElementById('later-label').textContent = week === 0 ? 'This week' : week === 1 ? 'Next week' : 'Events';
   inWeek.forEach((occurrence) => rows.append(renderRow(occurrence, occurrence === selected)));
@@ -766,7 +840,7 @@ function render(now = venueNow()) {
 
 // Redraw only when time actually changed what's on screen (a new day, or a class ending).
 function signature(schedule) {
-  return `${dateKey(schedule.today)}|${schedule.occurrences.map(o => `${o.past ? 1 : 0}${freshTicketData(o.event) ? 1 : 0}`).join('')}|${freshTicketData(view.data?.tickets)}|${freshTicketData(view.data?.calendarTickets)}`;
+  return `${dateKey(schedule.today)}|${schedule.occurrences.map(o => `${o.key}:${dateKey(o.date)}:${o.past ? 1 : 0}${freshTicketData(o.event) ? 1 : 0}`).join('|')}|${freshTicketData(view.data?.tickets)}|${freshTicketData(view.data?.calendarTickets)}`;
 }
 
 function refreshIfStale() {

@@ -94,6 +94,10 @@ h1 {
 .kicker { font-size: 12px; font-weight: 600; letter-spacing: .1em; }
 .hero-venue { margin: 0; font-size: 34px; font-weight: 600; line-height: 1.06; letter-spacing: -.03em; overflow-wrap: anywhere; }
 .hero-meta { margin-top: 8px; font-size: 15px; font-weight: 500; }
+.event-days { margin-top: 12px; font-size: 14px; line-height: 1.6; }
+.event-days summary { cursor: pointer; font-weight: 500; }
+.event-days[open] summary { margin-bottom: 6px; }
+.row-range { font-size: 14px; font-weight: 600; line-height: 1.3; }
 .hero-go {
   display: flex;
   align-items: center;
