@@ -1,8 +1,9 @@
-const CACHE = 'class-booker-private-shell-20260925-focus';
+const CACHE = 'class-booker-private-shell-20260925-desktop';
 const CORE = [
   './',
   './index.html',
   './app.mjs',
+  './freshness.mjs',
   './tickets.mjs',
   './wallet.mjs',
   './calendar-tickets.mjs',

@@ -1,6 +1,7 @@
 import { isTicketData, bookingLabel, ticketIcon, showBooking, invalidateOpenBooking, venueNow, freshTicketData } from './tickets.mjs?v=20260925-wallet';
 import { isCalendarTicketData, payloadFits, effectiveBooking, calendarLabel, calendarAction, PAYLOAD_LIMIT } from './calendar-tickets.mjs?v=20260925-focus';
 import { createTicketCache, acceptsSnapshot, revisionOf, shortcutOnly, readRevisionFloor, persistRevisionFloor } from './ticket-cache.mjs?v=20260925-wallet';
+import { startFreshness } from './freshness.mjs?v=20260925-desktop';
 export const STORAGE_KEY = 'class-booker-data-v1';
 
 const TEXT_LIMITS = {
@@ -143,6 +144,12 @@ function syncRemote() {
     if (view.pending) return;
     if (!data) { view.syncError = true; render(); return; }
     if (!acceptsSnapshot(data, view.data, revisionFloor)) { view.syncError = true; render(); return; }
+    document.documentElement.dataset.syncCheckedAt = new Date().toISOString();
+    // Polling an unchanged snapshot must not replace focused controls or collapse the schedule.
+    if (view.durable && !view.storageError && JSON.stringify(data) === JSON.stringify(view.data)) {
+      if (view.syncError) { view.syncError = false; render(); }
+      return;
+    }
     // The watermark is written before displaying a newly observed decision, including a cancellation.
     const watermark = rememberRevision(revisionOf(data));
     if (revisionOf(data) < revisionFloor) {
@@ -778,6 +785,8 @@ function renderImportPanel(pending) {
 }
 
 function render(now = venueNow()) {
+  document.documentElement.dataset.ticketRevision = String(revisionOf(view.data));
+  document.documentElement.dataset.ticketStorage = view.durable ? 'saved' : 'unavailable';
   const importSection = document.getElementById('import');
   importSection.replaceChildren();
   importSection.hidden = !view.pending;
@@ -862,6 +871,7 @@ export async function main() {
   const googleButton = document.getElementById('google-connection');
   let connection = null;
   try { connection = readRemoteSettings(localStorage.getItem(REMOTE_KEY)); } catch { /* unpaired */ }
+  document.documentElement.dataset.paired = String(Boolean(connection));
   if (googleButton) {
     googleButton.hidden = !connection;
     googleButton.onclick = () => {
@@ -904,10 +914,12 @@ if (typeof document !== 'undefined') {
     console.error('Class Booker failed to start:', error);
     document.getElementById('empty').hidden = false;
   });
-  start();
+  start().then(() => startFreshness({
+    syncRemote, refreshView: refreshIfStale,
+    canReload: () => !view.pending && !remoteInFlight && !document.querySelector('dialog[open]')
+      && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName),
+  }));
   window.addEventListener('hashchange', start);
-  window.addEventListener('focus', () => { refreshIfStale(); syncRemote(); });
-  window.addEventListener('online', syncRemote);
   window.addEventListener('storage', () => {
     try {
       revisionFloor = readRevisionFloor(localStorage, revisionFloor); invalidateOpenBooking(revisionFloor);
@@ -919,11 +931,4 @@ if (typeof document !== 'undefined') {
   });
   window.addEventListener('offline', () => { view.syncError = true; render(); });
   document.getElementById('reset').addEventListener('click', resetView);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      refreshIfStale();
-      syncRemote();
-    }
-  });
-  setInterval(refreshIfStale, 60000);
 }

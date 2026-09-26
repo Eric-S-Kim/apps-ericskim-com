@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260925-focus" />
+  <link rel="stylesheet" href="./styles.css?v=20260925-desktop" />
 </head>
 <body>
   <main class="wrap">
@@ -39,26 +39,7 @@
       Open your private Class Booker setup link on this phone to restore them.
     </section>
   </main>
-  <script type="module" src="./app.mjs?v=20260925-focus"></script>
-  <script type="module" src="./delight.mjs?v=20260925-focus"></script>
-  <script>
-    (() => {
-      if (!('serviceWorker' in navigator)) return;
-      const hadController = Boolean(navigator.serviceWorker.controller);
-      let reloaded = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!hadController || reloaded) return;
-        reloaded = true;
-        location.reload();
-      });
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then((registration) => {
-          document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') registration.update().catch(() => {});
-          });
-        }).catch(() => {});
-      });
-    })();
-  </script>
+  <script type="module" src="./app.mjs?v=20260925-desktop"></script>
+  <script type="module" src="./delight.mjs?v=20260925-desktop"></script>
 </body>
 </html>
